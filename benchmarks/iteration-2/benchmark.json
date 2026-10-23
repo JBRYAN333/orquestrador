@@ -1,0 +1,256 @@
+{
+  "metadata": {
+    "skill_name": "orquestrador",
+    "skill_path": "C:/Users/jryan/.config/opencode/skills/orquestrador",
+    "executor_model": "opencode/deepseek-v4.1-flash-free",
+    "analyzer_model": "opencode/deepseek-v4.1-flash-free",
+    "timestamp": "2026-10-23T20:57:36Z",
+    "evals_run": [
+      2,
+      3
+    ],
+    "runs_per_configuration": 1,
+    "iteration": 2,
+    "baseline_source": "iteration-1 (os bracos sem skill nao foram re-executados; as mudancas foram so nos agentes com skill)",
+    "caveats": [
+      "Iteracao 2 re-executou apenas os casos que falharam (eval 2 e 3). Eval 1 e 4 nao foram re-rodados.",
+      "Baseline vem do iteration 1 e nao foi re-executado.",
+      "1 run por configuracao: sinal direcional, nao estatistica."
+    ]
+  },
+  "runs": [
+    {
+      "eval_id": 2,
+      "eval_name": "Migracao Next para Vite em repo real",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 53.2,
+        "tokens": 123099,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Da veredito claro sobre a migracao Next para Vite",
+          "passed": true,
+          "evidence": "answer.md: 'Nao vale a pena a menos que o objetivo seja virar SPA estatica servida por outro host - a arquitetura atual depende de server components + better-sqlite3 nativo no Node'."
+        },
+        {
+          "text": "Cita arquivos e linhas concretos do repo como evidencia",
+          "passed": true,
+          "evidence": "answer.md cita src/lib/db.ts:1-13, src/app/layout.tsx:1-2,7-17,33, src/app/page.tsx:9,11-12, tsconfig.json:16-20, eslint.config.mjs:2-4 e conta ocorrencias por grep."
+        },
+        {
+          "text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra",
+          "passed": true,
+          "evidence": "answer.md: better-sqlite3 como modulo nativo nao bundleavel, 8 route handlers com NextResponse, 12 pages com force-dynamic + PageProps."
+        },
+        {
+          "text": "Distingue o que precisa reescrever do que so precisa de ajuste",
+          "passed": true,
+          "evidence": "answer.md secoes 'Reescrita (estrutural)' e 'Ajuste (mecanico)' separadas."
+        },
+        {
+          "text": "Entrega resposta completa sem encerrar por limite de passos",
+          "passed": true,
+          "evidence": "Resposta fecha com 'Esforco (estimativa)' e 'O que nao verifiquei'. Nao ha mencao a limite de passos. Steps subiu de 20 para 40."
+        }
+      ],
+      "notes": [
+        "Iteracao 2: steps 20 -> 40 e orcamento explicito no prompt do agente.",
+        "Tempo caiu de 194,5 s para 53,2 s e a resposta passou a ser completa: o cap de 20 nao estava protegendo nada, estava cortando a entrega.",
+        "Ainda nao alcancou a profundidade do baseline em next/font (globals.css:10-11), mas declarou o que nao verificou."
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "Transcricao de audio de cliente",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 224.3,
+        "tokens": 22756,
+        "tool_calls": 14,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Entrega transcricao com timestamps",
+          "passed": true,
+          "evidence": "answer.md secao 1: transcricao bloco a bloco de [00:00-00:21] a [02:46-02:52], com falante identificado por bloco."
+        },
+        {
+          "text": "Diz o que a pessoa quer ou qual e o pedido",
+          "passed": true,
+          "evidence": "answer.md secao 2: 'Nao e um pedido operacional - e um papo/conversa gravada' + pedido implicito 'transformar esse papo em conteudo'."
+        },
+        {
+          "text": "Marca trechos inaudiveis em vez de inventar",
+          "passed": true,
+          "evidence": "answer.md marca '[inaudivel / incerto]', '[inaudivel]' e traz tabela de 9 palavras com nivel de confianca (baixa/media/alta)."
+        },
+        {
+          "text": "Entrega completa sem encerrar por limite de passos",
+          "passed": true,
+          "evidence": "Resposta fecha com a tabela de palavras duvidosas e recomendacao de reouvir 00:24-00:45. Nao ha mencao a limite de passos. Steps subiu de 12 para 30."
+        }
+      ],
+      "notes": [
+        "Iteracao 2: steps 12 -> 30, prompt obriga a dizer o caminho usado e reservar 4 passos para escrever.",
+        "O agente declarou explicitamente: 'meu modelo de texto nao aceita audio como entrada nativa' e usou faster-whisper small. A premissa de audicao nativa esta encerrada.",
+        "Dois passes (VAD on/off) e tabela de confianca por palavra - melhor que o iteration 1 e melhor que o baseline."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Migracao Next para Vite em repo real",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 194.9,
+        "tokens": 41687,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Da veredito claro sobre a migracao Next para Vite",
+          "passed": true,
+          "evidence": "answer.md linha 3: 'Trocar Next por Vite aqui nao e trocar bundler, e tirar o servidor' + 'Nao faca, a menos que exista um motivo concreto'."
+        },
+        {
+          "text": "Cita arquivos e linhas concretos do repo como evidencia",
+          "passed": true,
+          "evidence": "answer.md cita src/app/layout.tsx:2, globals.css:10-11, entity-profile-view.tsx:3, layout.tsx:34, graph-canvas.tsx:350, servir.bat:3."
+        },
+        {
+          "text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra",
+          "passed": true,
+          "evidence": "answer.md: 'o app e 100% Server Components lendo um SQLite de 12,3 GB (elosys.db) direto no processo Node' + tabela das 8 rotas api."
+        },
+        {
+          "text": "Distingue o que precisa reescrever do que so precisa de ajuste",
+          "passed": true,
+          "evidence": "answer.md separa 'O que NAO quebra (a boa noticia)' de 'nivel 1/2/3' e fecha com tabela 'Custo real' por etapa."
+        },
+        {
+          "text": "Entrega resposta completa sem encerrar por limite de passos",
+          "passed": true,
+          "evidence": "Resposta fecha com 'Minha leitura' e recomendacao final; nao ha mencao a limite de passos."
+        }
+      ],
+      "notes": [
+        "Achados que o braco com skill nao teve tempo de alcancar: next/font quebrando as variaveis CSS (globals.css:10-11), import runtime de better-sqlite3 em entity-profile-view.tsx:3, banco de 12,3 GB."
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "Transcricao de audio de cliente",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 2,
+        "failed": 2,
+        "total": 4,
+        "time_seconds": 290.7,
+        "tokens": 43330,
+        "tool_calls": 6,
+        "errors": 1
+      },
+      "expectations": [
+        {
+          "text": "Entrega transcricao com timestamps",
+          "passed": false,
+          "evidence": "answer.md linha 3: 'Transcricao (resumida, com timestamps)' - entrega resumo por bloco ([00:00], [00:22], [01:26]), nao transcricao fiel do que foi dito."
+        },
+        {
+          "text": "Diz o que a pessoa quer ou qual e o pedido",
+          "passed": true,
+          "evidence": "answer.md secao 'O que ele quer': 'esse audio nao tem pedido nenhum... e um papo gravado sobre produtividade' + inferencias de uso."
+        },
+        {
+          "text": "Marca trechos inaudiveis em vez de inventar",
+          "passed": false,
+          "evidence": "Nenhum trecho marcado como inaudivel. Atribui falas a 'Johnny' e 'Michelle' sem ressalva de incerteza, e apresenta o resumo como se cobrisse o audio inteiro."
+        },
+        {
+          "text": "Entrega completa sem encerrar por limite de passos",
+          "passed": true,
+          "evidence": "Resposta fecha com arquivos gerados e observacao sobre o modelo small; nao ha mencao a limite de passos."
+        }
+      ],
+      "notes": [
+        "Tambem usou faster-whisper local. Identificou 3 falantes e separou melhor que o braco com skill, mas resumiu em vez de transcrever."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 138.75,
+        "stddev": 85.55,
+        "min": 53.2,
+        "max": 224.3
+      },
+      "tokens": {
+        "mean": 72927.5,
+        "stddev": 50171.5,
+        "min": 22756,
+        "max": 123099
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.75,
+        "stddev": 0.25,
+        "min": 0.5,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 242.8,
+        "stddev": 47.9,
+        "min": 194.9,
+        "max": 290.7
+      },
+      "tokens": {
+        "mean": 42508.5,
+        "stddev": 821.5,
+        "min": 41687,
+        "max": 43330
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.2500",
+      "time_seconds": "-104.1",
+      "tokens": "+30419"
+    }
+  },
+  "notes": [
+    "As duas falhas do iteration 1 eram de orcamento de passos, nao de modelo: contexto-longo 20 -> 40 e audio 12 -> 30.",
+    "Eval 2 com skill subiu de 4/5 para 5/5 e ficou 3,7x mais rapido (194,5 s -> 53,2 s).",
+    "Eval 3 com skill subiu de 3/4 para 4/4 e ficou 1,6x mais rapido (368,7 s -> 224,3 s).",
+    "Pass rate com skill nos dois casos re-executados: 9/9 (1,00) contra 7/9 (0,78) do baseline.",
+    "O agente audio declarou que o modelo nao aceita audio nativo e usou faster-whisper. A premissa de audicao nativa esta encerrada.",
+    "Tokens do eval 2 seguem altos (123k) porque ler repo grande custa; e o custo legitimo da delegacao."
+  ]
+}

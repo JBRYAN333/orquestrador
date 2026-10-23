@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-10-23T17:30:00Z",
+  "skill_name": "orquestrador",
+  "current_best": "v1",
+  "iterations": [
+    {
+      "version": "v0",
+      "parent": null,
+      "expectation_pass_rate": 0.846,
+      "grading_result": "baseline",
+      "is_current_best": false
+    },
+    {
+      "version": "v1",
+      "parent": "v0",
+      "expectation_pass_rate": 1.0,
+      "grading_result": "won",
+      "is_current_best": true
+    }
+  ],
+  "notes": "v0 = iteration-1 (4 evals, 15/18). v1 = iteration-2 (eval 2 e 3 re-executados, 9/9). O pass rate de v1 nao e comparavel ao de v0 no conjunto inteiro: v1 so cobre os dois casos que falharam."
+}

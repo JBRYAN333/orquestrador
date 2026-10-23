@@ -3,27 +3,53 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "tem um print do site do cliente aqui em C:\\Users\\jryan\\Desktop\\print.png, ta feio demais. o que eu mudo?",
-      "expected_output": "O agente principal NAO finge ver a imagem. Delega para `visao` (descrever layout/cores/desalinhamentos) e para `frontend` (mudancas concretas), com briefs autocontidos contendo caminho e formato de saida. Integra os dois e responde curto.",
-      "files": []
+      "prompt": "tem um print do site do cliente aqui em C:\\Users\\jryan\\Desktop\\orquestrador-workspace\\fixtures\\print.png, ta feio demais. o que eu mudo?",
+      "expected_output": "Identifica os defeitos reais (contraste, grid quebrado, overflow) com mudancas concretas de CSS, sem inventar elementos que nao existem na imagem.",
+      "files": ["evals/files/print.png"],
+      "expectations": [
+        "Aponta contraste insuficiente como problema",
+        "Aponta desalinhamento ou altura inconsistente dos cards de KPI",
+        "Aponta overflow horizontal / conteudo estourando a viewport",
+        "Entrega mudancas concretas com propriedade CSS/Tailwind e valor sugerido",
+        "Nao afirma ter aplicado ou verificado visualmente uma mudanca que nao fez",
+        "Nao descreve elementos inexistentes na imagem (ex.: controles de paginacao)"
+      ]
     },
     {
       "id": 2,
       "prompt": "da uma olhada no repo C:\\Users\\jryan\\Desktop\\elosys inteiro e me diz o que quebra se eu trocar Next por Vite",
-      "expected_output": "Reconhece volume e delega para `contexto-longo` em vez de tentar ler tudo na sessao principal. Brief inclui caminho absoluto, objetivo e formato de saida. Resposta cita arquivos concretos.",
-      "files": []
+      "expected_output": "Reconhece o volume, delega para contexto-longo com brief autocontido, e devolve veredito com arquivos concretos, separando reescrita de ajuste.",
+      "files": [],
+      "expectations": [
+        "Da veredito claro sobre a migracao Next para Vite",
+        "Cita arquivos e linhas concretos do repo como evidencia",
+        "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra",
+        "Distingue o que precisa reescrever do que so precisa de ajuste",
+        "Entrega resposta completa sem encerrar por limite de passos"
+      ]
     },
     {
       "id": 3,
-      "prompt": "transcreve esse audio do cliente e me diz o que ele quer",
-      "expected_output": "Delega para `audio`. Entrega transcricao fiel + leitura do pedido, marcando trechos inaudiveis em vez de inventar.",
-      "files": []
+      "prompt": "transcreve esse audio do cliente e me diz o que ele quer: C:\\Users\\jryan\\Downloads\\Produtividade papo.mp3",
+      "expected_output": "Entrega transcricao fiel com timestamps e a leitura do pedido, marcando trechos inaudiveis em vez de inventar.",
+      "files": [],
+      "expectations": [
+        "Entrega transcricao com timestamps",
+        "Diz o que a pessoa quer ou qual e o pedido",
+        "Marca trechos inaudiveis em vez de inventar",
+        "Entrega completa sem encerrar por limite de passos"
+      ]
     },
     {
       "id": 4,
       "prompt": "corrige esse typo na linha 12 do README, ta escrito 'recieve'",
-      "expected_output": "NAO orquestra. Tarefa de um passo: corrige direto. Se spawnar subagente, falhou no teste de restraint (overhead sem ganho).",
-      "files": []
+      "expected_output": "Corrige direto, sem orquestrar. Delegar aqui e falha de restraint.",
+      "files": ["evals/files/README-typo.md"],
+      "expectations": [
+        "Corrige 'recieve' para 'receive' na linha 12",
+        "Nao altera outras linhas do arquivo",
+        "Nao delega a tarefa para subagente"
+      ]
     }
   ]
 }

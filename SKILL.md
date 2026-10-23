@@ -13,7 +13,7 @@ O motivo é simples: cada subagente roda em sessão filha com **contexto limpo**
 
 Orquestre quando a tarefa tem uma parte que:
 
-- **Precisa de outro sentido** — imagem, print, PDF, áudio, vídeo. O modelo principal não vê isso bem.
+- **Precisa de outro sentido** — áudio e vídeo quase sempre; imagem e PDF só quando são muitos, ou quando você quer uma segunda leitura independente. Se é uma imagem só e você tem visão, leia você mesmo.
 - **É grande demais** — repo inteiro, log gigante, planilha enorme. Melhor queimar 1M de contexto do filho do que os 200k do pai.
 - **É especialidade clara** — CSS/layout, análise de dados, revisão.
 - **É independente** — dá para rodar em paralelo sem esperar o outro.
@@ -23,6 +23,28 @@ Não orquestre quando:
 - A resposta cabe em 1-2 passos. Subagente tem overhead: latência de spawn, contexto frio, tokens.
 - Você já tem tudo no contexto e a tarefa é contínua. Quebrar em filho faz ele perder o fio.
 - O usuário pediu velocidade acima de qualidade. Um modelo free em fila é mais lento que você respondendo direto.
+- **É uma imagem só e você já tem visão.** Ver a seção "O preço da delegação" abaixo: medido, isso saiu caro e não melhorou a resposta.
+
+## O preço da delegação
+
+Medido no benchmark desta skill (1 execução por configuração, 4 tarefas):
+
+| | Com orquestração | Sem orquestração |
+|---|---|---|
+| Pass rate | 0,846 | 0,875 |
+| Tokens por tarefa | 46.141 | 22.534 |
+| Tempo por tarefa | 148 s | 131 s |
+
+Numa tarefa de uma imagem só, a orquestração gastou **10x mais tokens** (39.314 vs 3.873) e entregou uma descrição com um elemento inventado. O filho não viu melhor que o pai — viu diferente, e pior.
+
+Delegar não é de graça. A conta fecha quando:
+
+- o material **não cabe** no seu contexto (aí o custo é inevitável);
+- a tarefa precisa de **um segundo par de olhos independente**, não de um eco do seu;
+- são **várias imagens** ou imagem + código, e paralelizar economiza tempo de verdade;
+- a especialidade é real (CSS, transcrição, análise de repo).
+
+Não fecha quando você delega para "usar o modelo certo" uma tarefa que você resolveria em uma leitura. Especialização que não muda o resultado é só custo.
 
 ## O protocolo
 
@@ -42,15 +64,23 @@ Não orquestre quando:
 
 **5. Integre e encerre.** Quando o filho devolve, ele acabou. Traga o resultado para o seu contexto, combine com o que você já sabe, e responda ao usuário. **Não reabra a sessão do filho** para "continuar" — ela foi feita para uma tarefa e cumpriu. Se precisa de mais, escreva um brief novo. Sessão de filho não é chat.
 
+**5b. Verifique antes de repassar.** O que o filho afirma não é fato seu. Antes de escrever a resposta final:
+
+- Se ele descreveu um **elemento ou função** que você não pode confirmar, não repasse como certeza. Diga "o subagente descreveu X" ou marque como incerto.
+- Se ele disse que **terminou** mas a resposta abre com "limite de passos atingido", isso é entrega parcial. Diga isso ao usuário em vez de esconder.
+- Se ele usou um **caminho alternativo** (whisper local em vez de ouvir o áudio, grep em vez de ler), o resultado tem o viés daquele caminho. Registre.
+
+Repassar afirmação de filho como se fosse sua é o jeito mais fácil de transformar uma boa orquestração em uma resposta errada com cara de confiável.
+
 ## Catálogo
 
 | Subagente | Modelo | Use para | Não use para |
 |---|---|---|---|
 | `codigo` | deepseek-v4.1-flash-free `#high` | implementar, refatorar, escrever teste, debugar arquivo isolado | decisão de arquitetura que depende da conversa |
-| `visao` | nemotron-3.5-super-vl-free `#high` | print, screenshot, layout, comparar antes/depois, ler PDF | texto puro |
+| `visao` | nemotron-3.5-super-vl-free `#high` | várias imagens, PDF, segunda leitura independente, antes/depois | uma imagem só que você já consegue ver |
 | `contexto-longo` | beam-free `#high` | repo inteiro, log enorme, contrato de 300 páginas | tarefa rápida |
 | `frontend` | glm-5.3-flash-free `#high` | CSS, Tailwind, componente visual, carrossel, landing | lógica de backend |
-| `audio` | mimo-v2.6-flash-free | áudio de WhatsApp, transcrição, vídeo com fala | qualquer coisa sem áudio |
+| `audio` | mimo-v2.6-flash-free | áudio de WhatsApp, transcrição (via whisper local), vídeo com fala | qualquer coisa sem áudio |
 | `rapido` | flint-40b-free `#low` | classificar, extrair campo, resumir 10 linhas | raciocínio difícil |
 
 Detalhes de ficha técnica e fallback: `references/modelos-free.md`.
@@ -76,18 +106,18 @@ A diferença não é tamanho — é o filho conseguir executar sem te fazer perg
 ## Falhas e fallback
 
 - **Modelo free fora / fila travada** — tente de novo uma vez. Se falhar de novo, caia para o irmão pago (`opencode-go/deepseek-v4.1-flash`, centavos) ou para o `codigo`.
+- **Filho parou por limite de passos** — a resposta costuma vir pela metade com "máximo de passos atingido". Não é falha de modelo, é de orçamento: o brief pediu mais leitura do que os `steps` do agente permitem. `contexto-longo` tem 40, `audio` tem 30. Se ainda estourar, reduza o escopo do brief ("só o diretório web/") em vez de aumentar o cap de novo.
 - **Resultado vago** — não reabra o filho pedindo "melhore". O brief estava fraco. Reescreva com formato de saída explícito e lance de novo.
 - **Resultado errado mas bem formatado** — desconfie do brief, não do modelo. Falta contexto ou falta restrição.
+- **Filho inventou um elemento** — em `visao`, é o erro clássico: nomear a função de uma forma que ele só viu como geometria. Corrija na resposta final e, se repetir, reforce no brief: "descreva forma e posição; se não tiver certeza da função, diga que não identificou".
 - **Filho tentou editar quando não devia** — os agentes de leitura já têm `edit` negado. Se aconteceu, foi em `codigo`.
 
 ## Exemplo
 
 Usuário: "esse print do site do cliente tá feio, o que eu mudo?"
 
-1. Classifique: visão + frontend. Duas partes, independentes.
-2. Lance `visao` e `frontend` em paralelo, cada um com o caminho do print e o formato de saída.
-3. `visao` devolve: hierarquia, cores, desalinhamentos.
-4. `frontend` devolve: 3 mudanças concretas de CSS.
-5. Você junta, decide o que faz sentido pro cliente, e responde em 5 linhas.
+1. Classifique: um print só. Você tem visão — **olhe você mesmo**. Delegar aqui custou 10x mais tokens e trouxe um elemento inventado no benchmark.
+2. Se precisar da parte de CSS, aí sim: lance `frontend` com o print e o formato ("3 mudanças, cada uma com problema + propriedade + valor").
+3. Você junta o que viu com o que o `frontend` propôs, e responde em 5 linhas.
 
-Você não viu o print. Não precisou. Esse é o ponto.
+O ponto não é "nunca ver imagem". É: **não pague dois modelos para olhar a mesma coisa**.

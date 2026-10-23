@@ -27,6 +27,21 @@ Knowledge cutoff: deepseek 2025-05, beam 2026-06, flint 2026-06.
 | "responde rápido, é simples" | flint (40B) |
 | "é código de verdade" | deepseek `#high` |
 
+## O que o benchmark desmentiu
+
+Medido em 23/10/2026, 1 execução por caso:
+
+- **`mimo` com áudio nativo não se provou.** Na prática o agente `audio` transcreveu via
+  `faster-whisper` no shell, igual ao baseline. Trate o áudio como "precisa de whisper local",
+  não como "o modelo ouve". `small` funciona; `medium` estoura memória em 8 GB (`mkl_malloc`).
+- **`nemotron` inventa função a partir de forma.** Descreveu uma scrollbar horizontal como
+  "controles de paginação". O prompt do agente agora proíbe nomear função sem certeza.
+- **`beam` com 20 steps não fecha um repo médio.** Subiu para 40. Com 20, entregou veredito
+  correto mas perdeu achados que o baseline encontrou.
+- **`deepseek-v4.1-flash-free` como baseline já tem visão e vai bem em imagem única.**
+  Delegar imagem para o `visao` só compensa com várias imagens, imagem + código, ou quando
+  você quer uma segunda leitura independente.
+
 ## Variantes
 
 `#low` responde rápido e raso. `#high` é o padrão de trabalho. `#max` só compensa em

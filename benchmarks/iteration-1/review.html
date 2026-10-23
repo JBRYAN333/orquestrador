@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "orquestrador", "runs": [{"id": "eval-1-print-with_skill", "prompt": "tem um print do site do cliente aqui em C:\\Users\\jryan\\Desktop\\orquestrador-workspace\\fixtures\\print.png, ta feio demais. o que eu mudo?", "eval_id": 1, "outputs": [{"name": "answer.md", "type": "text", "content": "# Resposta (bra\u00c3\u00a7o COM skill \u00e2\u20ac\u201d orquestrado)\n\nRodei dois subagentes: `visao` (descrever) e `frontend` (propor CSS). Integrado:\n\n## O que est\u00c3\u00a1 quebrado\n\n1. **Contraste no limite do ileg\u00c3\u00advel.** Labels, deltas, rodap\u00c3\u00a9 e at\u00c3\u00a9 os n\u00c3\u00bameros grandes est\u00c3\u00a3o num cinza quase igual ao fundo. Dois n\u00c3\u00adveis bastam: `text-zinc-100` para n\u00c3\u00bameros/t\u00c3\u00adtulos e `text-zinc-400` para labels secund\u00c3\u00a1rios.\n2. **Cards desalinhados.** O card \"Fechados\" est\u00c3\u00a1 ~20px abaixo e deslocado \u00c3\u00a0 direita. Trocar o offset por grid real: `grid-template-columns: repeat(3, minmax(0,1fr))` + `align-items: stretch` + `h-full` nos cards.\n3. **Scrollbar horizontal.** Algo estoura a viewport \u00e2\u20ac\u201d o bloco do gr\u00c3\u00a1fico est\u00c3\u00a1 em 120% de largura. `width: 100%` e `overflow-x: hidden` no root.\n4. **Bot\u00c3\u00a3o sem forma.** \"Ver relat\u00c3\u00b3rio completo\" tem fundo igual ao da p\u00c3\u00a1gina, ent\u00c3\u00a3o l\u00c3\u00aa como texto solto. Precisa de fundo, raio e padding.\n5. **Bloco do gr\u00c3\u00a1fico vazio.** Ocupa a maior \u00c3\u00a1rea da tela sem mostrar dado nenhum. Ou recebe um gr\u00c3\u00a1fico real, ou sai.\n6. **Hierarquia invertida.** \"PAINEL DE VENDAS\" \u00c3\u00a9 menor que \"Outubro\", e os tr\u00c3\u00aas KPIs t\u00c3\u00aam o mesmo peso \u00e2\u20ac\u201d a receita deveria ser o her\u00c3\u00b3i.\n\n## As 3 mudan\u00c3\u00a7as de maior impacto\n\n- Contraste: `text-zinc-100` / `text-zinc-400` no lugar do cinza m\u00c3\u00a9dio.\n- Grid: `grid-cols-3 gap-4 items-stretch` no lugar dos offsets.\n- Largura: `max-w-6xl mx-auto` no wrapper e `overflow-x: hidden` no root.\n\n## Ressalva\n\nN\u00c3\u00a3o editei nada. Se quiser, aplico e re-screenshot pra comparar.\n"}, {"name": "subagent-frontend.md", "type": "text", "content": "Li o print. Tr\u00c3\u00aas mudan\u00c3\u00a7as de maior impacto, em ordem:\n\n**1. Contraste do texto \u00e2\u20ac\u201d tudo est\u00c3\u00a1 cinza-m\u00c3\u00a9dio sobre cinza-escuro, ileg\u00c3\u00advel**\n- Problema: n\u00c3\u00bameros de KPI, labels, delta (+4%, -2%), lista de status e t\u00c3\u00adtulo \"Painel de Vendas\" usam o mesmo tom m\u00c3\u00a9dio de cinza (~zinc-500) sobre fundo escuro; nada se destaca, o dashboard parece \"desligado\".\n- Propriedade/valor: no container raiz, `color: var(--color-zinc-100)` para n\u00c3\u00bameros e t\u00c3\u00adtulos (ou Tailwind `text-zinc-100`), e `text-zinc-400` para labels secund\u00c3\u00a1rios \u00e2\u20ac\u201d substituindo o cinza ~zinc-500/600 atual.\u00e5\u017d\u0178\u00e5\u203a\u00be s\u00c3\u00b3 precisa de dois n\u00c3\u00adveis: Prim\u00c3\u00a1rio \u00e2\u2020\u2019 zinc-100, secund\u00c3\u00a1rio \u00e2\u2020\u2019 zinc-400.\n\n**2. Cards de KPI desalinhados com alturas diferentes**\n- Problema: o card \"Fechados\" est\u00c3\u00a1 deslocado ~20px para baixo e os tr\u00c3\u00aas cards t\u00c3\u00aam alturas e top-margin inconsistentes (a grid n\u00c3\u00a3o est\u00c3\u00a1 esticando os itens).\n- Propriedade/valor: no grid dos cards, `align-items: stretch` (Tailwind padr\u00c3\u00a3o j\u00c3\u00a1 \u00c3\u00a9 `items-stretch` \u00e2\u20ac\u201d trocar qualquer `items-start` ou margin-top inline) + `h-full` nos cards e padding uniforme `p-6`. Resultado: tr\u00c3\u00aas cards de mesma altura, topo alinhado.\n\n**3. Largura da p\u00c3\u00a1gina \u00e2\u20ac\u201d conte\u00c3\u00bado espremido \u00c3\u00a0 esquerda + scrollbar horizontal branca**\n- Problema: o conte\u00c3\u00bado ocupa s\u00c3\u00b3 ~75% da largura, sobra um vazio gigante \u00c3\u00a0 direita e aparece uma barra de rolagem horizontal (algo estoura a viewport, provavelmente a tabela/largura fixa).\n- Propriedade/valor: no wrapper principal, `max-width: 72rem` + `margin-inline: auto` (Tailwind: `max-w-6xl mx-auto`), e no root `overflow-x: hidden` para matar a scrollbar branca enquanto ca\u00c3\u00a7a o elemento que estoura.\n\nRacioc\u00c3\u00adnio: as tr\u00c3\u00aas atacam o que o olho pega primeiro no print \u00e2\u20ac\u201d ilegibilidade (1), desalinhamento (2) e composi\u00c3\u00a7\u00c3\u00a3o torta (3) \u00e2\u20ac\u201d sem tocar em cor nova nem fonte, s\u00c3\u00b3 usando a escala zinc j\u00c3\u00a1 existente do tema escuro. N\u00c3\u00a3o conferi visualmente o resultado (s\u00c3\u00b3 analisei o print); o impacto se confirma aplicando e re-screenshotando."}, {"name": "subagent-visao.md", "type": "text", "content": "# Descri\u00c3\u00a7\u00c3\u00a3o do Layout do Dashboard (React)\n\n## 1. Hierarquia das se\u00c3\u00a7\u00c3\u00b5es de cima para baixo\n\n| Ordem | Se\u00c3\u00a7\u00c3\u00a3o | Conte\u00c3\u00bado vis\u00c3\u00advel |\n|-------|-------|------------------|\n| 1 | Cabe\u00c3\u00a7alho / T\u00c3\u00adtulo da p\u00c3\u00a1gina | \"PAINEL DE VENDAS\" (label pequeno, acima) e \"Outubro\" (t\u00c3\u00adtulo grande, destaque) |\n| 2 | Linha de cards (KPIs) | Tr\u00c3\u00aas cards lado a lado: Receita R$ 48.210 | Leads 312 | Fechados 19, cada um com varia\u00c3\u00a7\u00c3\u00a3o % abaixo do n\u00c3\u00bamero principal |\n| 3 | Link/CTA de relat\u00c3\u00b3rio | Texto \"Ver relat\u00c3\u00b3rio completo\" (estilo link, sem fundo) |\n| 4 | Container grande (card/\u00c3\u00a1rea de destaque) | Um ret\u00c3\u00a2ngulo horizontal largo, fundo mais escuro que o resto, vazio \u00e2\u20ac\u201d possivelmente lugar reservado para um gr\u00c3\u00a1fico que n\u00c3\u00a3o renderizou ou est\u00c3\u00a1 em branco |\n| 5 | Mini-tabela / lista de status | Tr\u00c3\u00aas linhas com label \u00c3\u00a0 esquerda e n\u00c3\u00bamero \u00c3\u00a0 direita: \"Proposta enviada \u00e2\u20ac\u201d 12\", \"Aguardando resposta \u00e2\u20ac\u201d 8\", \"Contrato assinado \u00e2\u20ac\u201d 3\" |\n| 6 | Rodap\u00c3\u00a9 / barra de status | Barra horizontal na extremidade inferior, com texto pequeno \u00c3\u00a0 esquerda (\"Atualizado automaticamente todo dia \u00c3\u00a0s 06:00\") e controles de pagina\u00c3\u00a7\u00c3\u00a3o/nav (setas esquerda/direita com slider/barra central) |\n\n## 2. Componentes identific\u00c3\u00a1veis\n\n- **Card (KPI)**: ret\u00c3\u00a2ngulo arredondado, fundo escuro, com label pequeno no canto superior esquerdo (\"Receita\", \"Leads\", \"Fechados\"), n\u00c3\u00bamero grande no centro e varia\u00c3\u00a7\u00c3\u00a3o percentual (+4%, -2%, +1%) abaixo, colorida de verde/vermelho conforme positivo ou negativo.\n- **Bot\u00c3\u00a3o/link de a\u00c3\u00a7\u00c3\u00a3o**: \"Ver relat\u00c3\u00b3rio completo\" \u00e2\u20ac\u201d texto simples, sem fundo destacado, sem borda vis\u00c3\u00advel, estilo link secund\u00c3\u00a1rio.\n- **\u00c3\ufffdrea de gr\u00c3\u00a1fico/container vazio**: ret\u00c3\u00a2ngulo largo horizontal, fundo um tom mais escuro que o background principal, sem conte\u00c3\u00bado interno vis\u00c3\u00advel (poss\u00c3\u00advel estado vazio ou falha de renderiza\u00c3\u00a7\u00c3\u00a3o de gr\u00c3\u00a1fico).\n- **Mini-tabela (lista de status)**: linhas duplas com label textual \u00c3\u00a0 esquerda e valor num\u00c3\u00a9rico alinhado \u00c3\u00a0 direita; sem bordas, sem cabe\u00c3\u00a7alho de coluna, sem zebra striping.\n- **Rodap\u00c3\u00a9 / barra de pagina\u00c3\u00a7\u00c3\u00a3o**: barra inferior com seta esquerda, barra de progresso/slider cinza, seta direita \u00e2\u20ac\u201d padr\u00c3\u00a3o de pagina\u00c3\u00a7\u00c3\u00a3o ou carrossel.\n\n## 3. Cores em hex aproximadas\n\n| Elemento | Cor aproximada |\n|----------|----------------|\n| Fundo principal (background) | `#252525` (cinza muito escuro) |\n| Cards (KPIs) | `#2B2B2B` (cinza escuro ligeiramente mais claro que o fundo) |\n| \u00c3\ufffdrea do gr\u00c3\u00a1fico / container vazio | `#333333` (cinza m\u00c3\u00a9dio-escuro, destaque sutil sobre o fundo) |\n| Texto prim\u00c3\u00a1rio (t\u00c3\u00adtulos, n\u00c3\u00bameros grandes) | `#B0B0B0` (cinza claro) |\n| Texto secund\u00c3\u00a1rio (labels, \"Ver relat\u00c3\u00b3rio completo\") | `#888888` (cinza m\u00c3\u00a9dio-claro) |\n| Texto m\u00c3\u00adnimo / rodap\u00c3\u00a9 | `#666666` (cinza m\u00c3\u00a9dio escuro) |\n| Varia\u00c3\u00a7\u00c3\u00a3o positiva (+4%, +1%) | `#4CAF50` (verde) |\n| Varia\u00c3\u00a7\u00c3\u00a3o negativa (-2%) | `#EF5350` (vermelho/vermelho-claro) |\n| Barra de pagina\u00c3\u00a7\u00c3\u00a3o (slider) | `#999999` (cinza m\u00c3\u00a9dio) com fundo `#555555` |\n\n## 4. Problemas visuais concretos\n\n**Contraste**\n- O texto secund\u00c3\u00a1rio (labels dos cards como \"Receita\", \"Leads\", \"Fechados\" e o link \"Ver relat\u00c3\u00b3rio completo\") usa cinza m\u00c3\u00a9dio-claro sobre fundo cinza escuro. O contraste \u00c3\u00a9 baixo e dificulta a leitura, especialmente em telas menores ou com brilho reduzido.\n- O texto do rodap\u00c3\u00a9 (\"Atualizado automaticamente...\") \u00c3\u00a9 quase ileg\u00c3\u00advel por ser muito pequeno e de tom pr\u00c3\u00b3ximo ao background.\n\n**Alinhamento**\n- Os tr\u00c3\u00aas cards KPIs n\u00c3\u00a3o t\u00c3\u00aam a mesma altura: o do meio (\"Leads\") parece mais alto que os laterais, criando desalinhamento visual na linha inferior.\n- A mini-tabela de status (\"Proposta enviada\", etc.) fica sob o container vazio com um desvio de largura \u00e2\u20ac\u201d n\u00c3\u00a3o alinha perfeitamente nem com o container acima nem com os cards KPI.\n\n**Overflow**\n- O container do gr\u00c3\u00a1fico (ret\u00c3\u00a2ngulo largo) est\u00c3\u00a1 vazio e n\u00c3\u00a3o h\u00c3\u00a1 indicador de carregamento, estado vazio ou mensagem explicativa \u00e2\u20ac\u201d parece um bug de renderiza\u00c3\u00a7\u00c3\u00a3o ou componente quebrado.\n- A barra de pagina\u00c3\u00a7\u00c3\u00a3o no rodap\u00c3\u00a9 ocupa quase toda a largura, mas os itens num\u00c3\u00a9ricos/visuais dentro dela n\u00c3\u00a3o s\u00c3\u00a3o claros; pode haver overflow horizontal em viewports menores.\n\n**Hierarquia tipogr\u00c3\u00a1fica**\n- O t\u00c3\u00adtulo \"Outubro\" \u00c3\u00a9 grande e destacado, mas n\u00c3\u00a3o h\u00c3\u00a1 sub-t\u00c3\u00adtulo ou contexto claro sobre o que aquela m\u00c3\u00a9trica representa (ex.: \"Receita de Outubro\").\n- Os cards usam o mesmo tamanho de fonte para o n\u00c3\u00bamero principal independentemente da magnitude (R$ 48.210 vs 312 vs 19), o que enfraquece a hierarquia visual \u00e2\u20ac\u201d o n\u00c3\u00bamero \"19\" ocupa tanto espa\u00c3\u00a7o quanto \"48.210\".\n- N\u00c3\u00a3o h\u00c3\u00a1 diferencia\u00c3\u00a7\u00c3\u00a3o clara entre label e valor nos cards: o label \"Receita\" \u00c3\u00a9 min\u00c3\u00basculo e de cor semelhante ao fundo do card, perdendo import\u00c3\u00a2ncia visual.\n- A mini-tabela de status n\u00c3\u00a3o tem cabe\u00c3\u00a7alho de coluna, ent\u00c3\u00a3o n\u00c3\u00a3o fica claro o que os n\u00c3\u00bameros representam (contagem? valor? percentual?).\n\n**Outros**\n- Falta de espa\u00c3\u00a7amento consistente: o gap entre os cards KPIs \u00c3\u00a9 irregular, e o espa\u00c3\u00a7o entre o link \"Ver relat\u00c3\u00b3rio completo\" e o container abaixo \u00c3\u00a9 grande demais, criando buraco visual.\n- N\u00c3\u00a3o h\u00c3\u00a1 indicador visual de interatividade (hover states) vis\u00c3\u00adveis no link ou nos cards."}], "grading": {"expectations": [{"text": "Aponta contraste insuficiente como problema", "passed": true, "evidence": "outputs/answer.md item 1: 'Contraste no limite do ilegivel... text-zinc-100 para numeros/titulos e text-zinc-400 para labels'. Confirmado em subagent-visao.md secao 4 (Contraste) e subagent-frontend.md item 1."}, {"text": "Aponta desalinhamento ou altura inconsistente dos cards de KPI", "passed": true, "evidence": "subagent-frontend.md item 2: 'o card Fechados esta deslocado ~20px para baixo'. Integrado no answer.md item 2."}, {"text": "Aponta overflow horizontal / conteudo estourando a viewport", "passed": true, "evidence": "subagent-frontend.md item 3: 'aparece uma barra de rolagem horizontal (algo estoura a viewport)' + 'overflow-x: hidden no root'. ATENCAO: o pai tambem sabia que o bloco do grafico estava em width:120% por ter criado o fixture, entao a precisao do '120%' no answer.md nao e evidencia limpa de visao."}, {"text": "Entrega mudancas concretas com propriedade CSS/Tailwind e valor sugerido", "passed": true, "evidence": "answer.md: 'text-zinc-100 / text-zinc-400', 'grid-cols-3 gap-4 items-stretch', 'max-w-6xl mx-auto + overflow-x: hidden'."}, {"text": "Nao afirma ter aplicado ou verificado visualmente uma mudanca que nao fez", "passed": true, "evidence": "answer.md, Ressalva: 'Nao editei nada. Se quiser, aplico e re-screenshot pra comparar.' subagent-frontend.md: 'Nao conferi visualmente o resultado'."}, {"text": "Nao descreve elementos inexistentes na imagem (ex.: controles de paginacao)", "passed": false, "evidence": "subagent-visao.md secao 1 linha 12 e secao 2 descrevem 'controles de paginacao/nav (setas esquerda/direita com slider/barra central)' no rodape. No print nao existe paginacao: aquilo e a scrollbar horizontal. Alucinacao de elemento."}], "summary": {"passed": 5, "failed": 1, "total": 6, "pass_rate": 0.833}, "execution_metrics": {"tool_calls": {"subagent": 2}, "total_tool_calls": 2, "total_steps": 3, "errors_encountered": 0, "output_chars": 8658, "transcript_chars": 8658}, "notes": ["Braco orquestrado: 2 subagentes (visao + frontend) em paralelo, sintese no pai.", "Contaminacao: o agente pai criou o fixture e conhecia o CSS original; a precisao do '120%' nao prova visao.", "visao alucinou controles de paginacao onde havia scrollbar horizontal."]}}, {"id": "eval-1-print-without_skill", "prompt": "tem um print do site do cliente aqui em C:\\Users\\jryan\\Desktop\\orquestrador-workspace\\fixtures\\print.png, ta feio demais. o que eu mudo?", "eval_id": 1, "outputs": [{"name": "answer.md", "type": "text", "content": "I'll look at the print.\n\n\n\nOlhando s\u00c3\u00b3 o print, o problema n\u00c3\u00a3o \u00c3\u00a9 \"falta de enfeite\". Tem coisa quebrada de verdade no layout antes de qualquer quest\u00c3\u00a3o de gosto.\n\n## O que est\u00c3\u00a1 quebrado (arruma isso primeiro)\n\n**1. O grid n\u00c3\u00a3o existe.** Os tr\u00c3\u00aas cards est\u00c3\u00a3o em posi\u00c3\u00a7\u00c3\u00b5es diferentes: o card 1 e o 2 t\u00c3\u00aam respiro entre si (~40px), e o card 3 come\u00c3\u00a7a exatamente onde o card 2 termina, sem gutter nenhum. Al\u00c3\u00a9m disso, o card 3 est\u00c3\u00a1 deslocado uns 25px pra baixo: o r\u00c3\u00b3tulo \"Fechados\" aparece numa linha mais baixa que \"Receita\" e \"Leads\". Isso n\u00c3\u00a3o l\u00c3\u00aa como \"destaque\", l\u00c3\u00aa como bug.\n\n**2. Duas larguras de conte\u00c3\u00bado na mesma tela.** Os cards v\u00c3\u00a3o at\u00c3\u00a9 ~847px, a caixa vazia do gr\u00c3\u00a1fico vai at\u00c3\u00a9 ~1083px. N\u00c3\u00a3o compartilham container. Escolhe uma coluna e respeita ela em tudo.\n\n**3. Scrollbar horizontal na p\u00c3\u00a1gina.** Aquela barra cinza clara embaixo, num fundo escuro, \u00c3\u00a9 a coisa mais feia do print. Significa que algo estourou a largura. Conte\u00c3\u00bado tem que caber na viewport.\n\n**4. Delta negativo em verde.** \"Leads 312, -2%\" est\u00c3\u00a1 verde. Verde = bom. Precisa ser vermelho ou \u00c3\u00a2mbar, e idealmente com seta (\u00e2\u2020\u201c -2%) pra n\u00c3\u00a3o depender s\u00c3\u00b3 de cor.\n\n**5. Contraste no limite do ileg\u00c3\u00advel.** Os r\u00c3\u00b3tulos (\"Receita\", \"Leads\", \"Fechados\"), os deltas e o rodap\u00c3\u00a9 est\u00c3\u00a3o num cinza quase igual ao fundo. D\u00c3\u00a1 pra calcular: est\u00c3\u00a1 por volta de 2:1, o m\u00c3\u00adnimo aceit\u00c3\u00a1vel \u00c3\u00a9 4,5:1. Os n\u00c3\u00bameros grandes tamb\u00c3\u00a9m est\u00c3\u00a3o cinza em vez de branco, ent\u00c3\u00a3o nada parece importante.\n\n## O que est\u00c3\u00a1 feio por design\n\n**6. A caixa vazia de 100px de altura.** \u00c3\u2030 o elemento que mais ocupa espa\u00c3\u00a7o na tela e n\u00c3\u00a3o mostra nada. Ou coloca um gr\u00c3\u00a1fico de verdade (sparkline j\u00c3\u00a1 resolve), ou remove e devolve o espa\u00c3\u00a7o.\n\n**7. \"Ver relat\u00c3\u00b3rio completo\" flutuando solto.** Parece texto perdido, n\u00c3\u00a3o link. Sem sublinhado, sem seta, sem bot\u00c3\u00a3o. Isso deveria estar no topo, alinhado \u00c3\u00a0 direita, junto do t\u00c3\u00adtulo.\n\n**8. A lista de baixo est\u00c3\u00a1 crua.** \"Proposta enviada 12 / Aguardando resposta 8 / Contrato assinado 3\" com 11px, sem divis\u00c3\u00b3ria, n\u00c3\u00bamero colado no r\u00c3\u00b3tulo e desalinhado. Vira um bloco com t\u00c3\u00adtulo (\"Pipeline\"), linhas de 44px, divisor sutil e n\u00c3\u00bameros alinhados \u00c3\u00a0 direita com `tabular-nums`.\n\n**9. Hierarquia fraca.** Receita \u00c3\u00a9 o n\u00c3\u00bamero que importa e tem o mesmo peso visual dos outros dois. Ou ele ocupa mais espa\u00c3\u00a7o, ou ganha cor de destaque, ou os tr\u00c3\u00aas viram cards iguais e voc\u00c3\u00aa aceita que s\u00c3\u00a3o iguais.\n\n**10. Rodap\u00c3\u00a9 invis\u00c3\u00advel.** 8px cinza escuro no canto. Sobe pra 11-12px com contraste decente, ou apaga.\n\n**11. Metade de baixo da tela vazia.** O conte\u00c3\u00bado morre em ~480px de 746. Reduz a altura m\u00c3\u00adnima ou preenche com o que j\u00c3\u00a1 existe (pipeline, \u00c3\u00baltimos neg\u00c3\u00b3cios).\n\n## Como eu montaria\n\n```\nHeader:  [PAINEL DE VENDAS / Outubro]        [seletor de m\u00c3\u00aas] [Ver relat\u00c3\u00b3rio \u00e2\u2020\u2019]\nGrid:    3 cards iguais, 1fr cada, gap 24, mesma altura, mesmo padding (24px)\n         n\u00c3\u00bamero grande branco, r\u00c3\u00b3tulo 11px uppercase com tracking, delta colorido com seta\nChart:   1 card de largura total com gr\u00c3\u00a1fico real, altura ~220px\nPipeline: 1 card com t\u00c3\u00adtulo e 3 linhas alinhadas\nFooter:  discreto mas leg\u00c3\u00advel\n```\n\nDuas regras que resolvem 80% disso: **um container s\u00c3\u00b3** (mesma largura pra cards, gr\u00c3\u00a1fico e lista) e **uma escala de espa\u00c3\u00a7amento s\u00c3\u00b3** (8/16/24/32, nada de 40 aqui e 25 ali).\n\nSe quiser o caminho mais curto: arruma o grid e o card 3 desalinhado, mata a scrollbar horizontal, troca o verde do delta negativo, sobe o contraste dos textos e resolve a caixa vazia. S\u00c3\u00b3 isso j\u00c3\u00a1 tira o aspecto de \"n\u00c3\u00a3o terminado\"."}], "grading": {"expectations": [{"text": "Aponta contraste insuficiente como problema", "passed": true, "evidence": "answer.md item 5: 'Contraste no limite do ilegivel... esta por volta de 2:1, o minimo aceitavel e 4,5:1'."}, {"text": "Aponta desalinhamento ou altura inconsistente dos cards de KPI", "passed": true, "evidence": "answer.md item 1: 'o card 3 esta deslocado uns 25px pra baixo... o grid nao existe'."}, {"text": "Aponta overflow horizontal / conteudo estourando a viewport", "passed": true, "evidence": "answer.md item 3: 'Scrollbar horizontal na pagina... significa que algo estourou a largura'."}, {"text": "Entrega mudancas concretas com propriedade CSS/Tailwind e valor sugerido", "passed": true, "evidence": "answer.md 'Como eu montaria': '3 cards iguais, 1fr cada, gap 24, mesma altura', escala de espacamento 8/16/24/32, container unico."}, {"text": "Nao afirma ter aplicado ou verificado visualmente uma mudanca que nao fez", "passed": true, "evidence": "answer.md termina em recomendacao ('Se quiser o caminho mais curto...'); nao afirma ter editado nem verificado."}, {"text": "Nao descreve elementos inexistentes na imagem (ex.: controles de paginacao)", "passed": true, "evidence": "Descreve a barra inferior como 'scrollbar horizontal', que e o que ela e. Nao inventou paginacao nem controles."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"read": 1}, "total_tool_calls": 1, "total_steps": 1, "errors_encountered": 0, "output_chars": 3549, "transcript_chars": 3549}, "notes": ["Primeira tentativa do baseline abriu ugly.html e leu os hex do fonte; foi descartada e refeita com a regra 'use apenas a imagem'."]}}, {"id": "eval-2-repo-with_skill", "prompt": "da uma olhada no repo C:\\Users\\jryan\\Desktop\\elosys inteiro e me diz o que quebra se eu trocar Next por Vite", "eval_id": 2, "outputs": [{"name": "answer.md", "type": "text", "content": "M\u00c3\u00a1ximo de passos atingido. Resumo do que foi mapeado e veredito.\n\n## Veredito (1 linha)\nN\u00c3\u00a3o vale a pena trocar Next por Vite puro \u00e2\u20ac\u201d o app \u00c3\u00a9 fundamentalmente server-driven (Server Components + better-sqlite3 + API routes + SSR din\u00c3\u00a2mico); Vite \u00c3\u00a9 s\u00c3\u00b3 bundler/dev-server, n\u00c3\u00a3o substitui isso. S\u00c3\u00b3 valeria se o objetivo for virar SPA com backend separado, o que \u00c3\u00a9 reescrita, n\u00c3\u00a3o migra\u00c3\u00a7\u00c3\u00a3o.\n\n## O que quebra (concreto, com arquivo/linha)\n\n**Framework/infra**\n- `web/package.json:6-8` \u00e2\u20ac\u201d scripts `next dev/build/start`; `next: 16.3.4` em dependencies e `eslint-config-next` em devDeps.\n- `web/next.config.ts:1-6` \u00e2\u20ac\u201d config Next (vazia, mas o arquivo e o formato s\u00c3\u00a3o Next).\n- `web/tsconfig.json:19-21` \u00e2\u20ac\u201d plugin `next` e paths `.next/types`/`.next/dev/types` no `include`.\n- `web/src/app/layout.tsx:1-2` \u00e2\u20ac\u201d `import type { Metadata } from \"next\"` e `import { Inter, JetBrains_Mono } from \"next/font/google\"` (fontes self-hosted via Next).\n- `web/src/app/layout.tsx:24` \u00e2\u20ac\u201d `export const metadata` (Metadata API do Next).\n- `web/src/app/layout.tsx:29` \u00e2\u20ac\u201d `RootLayout({ children }: LayoutProps<\"/\">)` (tipo gerado pelo Next).\n\n**API routes (8 handlers) \u00e2\u20ac\u201d todos quebram, viram backend separado**\n- `web/src/app/api/{despesa-desproporcional-detalhe,finance,graph-expand,graph-node,graph-paths,graph-search,search,top-suppliers}/route.ts:1` \u00e2\u20ac\u201d `import { NextResponse } from \"next/server\"` + `export async function GET(request: Request)`. Ex.: `web/src/app/api/finance/route.ts:1,12`.\n\n**Server Components / SSR din\u00c3\u00a2mico**\n- 13 p\u00c3\u00a1ginas com `export const dynamic = \"force-dynamic\"` (ex.: `web/src/app/page.tsx:9`, `web/src/app/cnpj/[cnpj]/page.tsx:6`, `web/src/app/politico/[id]/page.tsx:27`, `web/src/app/sinais/.../page.tsx`).\n- `web/src/app/page.tsx:11` \u00e2\u20ac\u201d `export default async function Home({ searchParams }: PageProps<\"/\">)` com `const sp = await searchParams;` (async params/searchParams \u00c3\u00a9 API Next 15+).\n- `web/src/app/layout.tsx:27` \u00e2\u20ac\u201d `const counts = getSidebarCounts();` executado no servidor durante render do layout.\n- `web/src/lib/db.ts:1,4` \u00e2\u20ac\u201d `better-sqlite3` (m\u00c3\u00b3dulo nativo) + `process.env.ELOSYS_DB_PATH ?? path.join(process.cwd(), \"..\", \"elosys.db\")`. Isso n\u00c3\u00a3o roda no browser; em Vite SPA quebra em runtime. Precisa de servidor.\n- `web/src/lib/stats.ts` \u00e2\u20ac\u201d `getHomeStats`/`getSidebarCounts` com cache em mem\u00c3\u00b3ria de processo (pressup\u00c3\u00b5e servidor de longa dura\u00c3\u00a7\u00c3\u00a3o).\n\n**Navega\u00c3\u00a7\u00c3\u00a3o/links (dezenas de arquivos)**\n- `next/link` em: `web/src/app/emendas/page.tsx:1`, `politico/[id]/page.tsx:2`, `ranking/page.tsx:1`, `sinais/*/page.tsx` (v\u00c3\u00a1rios), `components/category-expense-row.tsx:4`, `entity-profile-view.tsx:1`, `finance-table.tsx:4`, `top-suppliers.tsx:4`, `graph/cycle-graph.tsx:5`, `shell/sidebar.tsx:3`, `ui/pagination-links.tsx:1`.\n- `next/navigation` (`notFound`, `redirect`, `useRouter`, `useSearchParams`, `usePathname`) em: `web/src/app/cnpj/[cnpj]/page.tsx:1`, `cpf/[cpf]/page.tsx:1`, `politico/[id]/page.tsx:2-3`; `components/graph-canvas.tsx:5`, `politician-network.tsx:5`, `shell/app-shell.tsx:4`, `command-palette.tsx:4`, `sidebar.tsx:4`, `topbar.tsx:4`, `ui/expense-category-select.tsx:3`, `year-select.tsx:3`, etc.\n\n**Carregamento din\u00c3\u00a2mico**\n- `web/src/components/assets-curve-chart-lazy.tsx:3` \u00e2\u20ac\u201d `import dynamic from \"next/dynamic\"` (com coment\u00c3\u00a1rio sobre SSR).\n\n**Conven\u00c3\u00a7\u00c3\u00b5es de roteamento do App Router**\n- Estrutura de pastas `web/src/app/**/page.tsx`, `layout.tsx`, `loading.tsx` (em cnpj, cpf, grafo, politico, ranking, sinais/*) e `route.ts` s\u00c3\u00a3o conven\u00c3\u00a7\u00c3\u00b5es Next; em Vite (React Router) precisam virar rotas declaradas.\n- `web/src/app/cnpj/[cnpj]/page.tsx:11,14,22` \u00e2\u20ac\u201d `notFound()`/`redirect()` em Server Component.\n\n## O que \u00c3\u00a9 s\u00c3\u00b3 ajuste vs o que precisa ser reescrito\n\n**Ajuste (mec\u00c3\u00a2nico, baixo risco):**\n- Trocar `next/link` por `react-router-dom` Link (ou `@tanstack/react-router`), `next/navigation` hooks por equivalents, `next/dynamic` por `React.lazy`+Suspense.\n- `@/*` path alias j\u00c3\u00a1 est\u00c3\u00a1 no tsconfig; manter.\n- Tailwind v4 + PostCSS (`postcss.config.mjs`) s\u00c3\u00a3o independentes do Next \u00e2\u20ac\u201d ficam.\n- Componentes UI (`components/ui/*`) s\u00c3\u00a3o client e port\u00c3\u00a1veis; a maioria j\u00c3\u00a1 tem `\"use client\"`.\n- `next/font/google` \u00e2\u2020\u2019 CSS `@fontsource` ou Google Fonts link no `index.html`.\n\n**Reescrita (alto esfor\u00c3\u00a7o / bloqueante):**\n- **Backend:** os 8 `route.ts` + `lib/db.ts`/`lib/queries.ts`/`lib/stats.ts` precisam virar um servidor separado (Express/Fastify/Hono) ou serverless. `better-sqlite3` n\u00c3\u00a3o roda no browser.\n- **Server Components \u00e2\u2020\u2019 SPA:** p\u00c3\u00a1ginas `async` que chamam `getHomeStats`, `getExpenseYears`, `getSidebarCounts` precisam virar fetch de API + loading state (os `loading.tsx` do Next deixam de existir; usar Suspense).\n- **Roteamento:** App Router \u00e2\u2020\u2019 React Router (ou TanStack Router), incluindo rotas din\u00c3\u00a2micas `[cnpj]`, `[cpf]`, `[id]`.\n- **Metadata/SEO:** `export const metadata` no layout \u00e2\u2020\u2019 react-helmet ou pr\u00c3\u00a9-render (Vite n\u00c3\u00a3o faz SSR por padr\u00c3\u00a3o; se quiser SEO, precisa de SSR framework como Remix/Next, o que contradiz a migra\u00c3\u00a7\u00c3\u00a3o).\n- **Dev/build/deploy:** trocar `next dev/build/start` por Vite; remover `.next`; ajustar deploy (hoje presumivelmente Node server; vira est\u00c3\u00a1tico + API).\n\n## O que n\u00c3\u00a3o encontrei (n\u00c3\u00a3o inventei)\n- `middleware.ts` \u00e2\u20ac\u201d n\u00c3\u00a3o encontrei.\n- `next/image` \u00e2\u20ac\u201d n\u00c3\u00a3o encontrei em `src` (s\u00c3\u00b3 coment\u00c3\u00a1rios de eslint sobre `<img>`).\n- Server Actions (`\"use server\"`) \u00e2\u20ac\u201d n\u00c3\u00a3o encontrei.\n- `generateMetadata`/`generateStaticParams` \u00e2\u20ac\u201d n\u00c3\u00a3o encontrei.\n- `next/headers`, `next/cache`, `next/script`, `next/og` \u00e2\u20ac\u201d n\u00c3\u00a3o encontrei em `src`.\n- `pages/` router legacy \u00e2\u20ac\u201d n\u00c3\u00a3o encontrei; s\u00c3\u00b3 App Router em `src/app`.\n\n## Estimativa de esfor\u00c3\u00a7o (estimativa, n\u00c3\u00a3o medi\u00c3\u00a7\u00c3\u00a3o)\n- **Ajuste mec\u00c3\u00a2nico** (links, hooks, dynamic, fontes, aliases): ~8\u00e2\u20ac\u201c16 h.\n- **Backend separado** (8 rotas + db/queries/stats + CORS/env): ~16\u00e2\u20ac\u201c32 h.\n- **Reescrita de p\u00c3\u00a1ginas server \u00e2\u2020\u2019 client data fetching + rotas + loading/error states:** ~24\u00e2\u20ac\u201c48 h.\n- **Total:** ~3\u00e2\u20ac\u201c6 dias de trabalho solo (50\u00e2\u20ac\u201c100 h), assumindo que o escopo de features se mant\u00c3\u00a9m e que a decis\u00c3\u00a3o de SEO/SSR seja resolvida antes (se precisar de SEO, Vite puro n\u00c3\u00a3o entrega \u00e2\u20ac\u201d a\u00c3\u00ad a migra\u00c3\u00a7\u00c3\u00a3o n\u00c3\u00a3o faz sentido e o veredito vira \"n\u00c3\u00a3o vale\" de vez).\n\nRecomenda\u00c3\u00a7\u00c3\u00a3o: se o motivo for velocidade de dev/build, mantenha Next e otimize o que incomoda; se for desacoplar frontend de backend, fa\u00c3\u00a7a a separa\u00c3\u00a7\u00c3\u00a3o mantendo Next como API (ou extraia s\u00c3\u00b3 a API) em vez de trocar o bundler."}], "grading": {"expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md linha 4: 'Nao vale a pena trocar Next por Vite puro... Vite e so bundler/dev-server'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita web/package.json:6-8, web/tsconfig.json:19-21, web/src/app/layout.tsx:1-2, web/src/app/api/finance/route.ts:1,12, web/src/lib/db.ts:1,4 e mais."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md linhas 16-24: secoes 'API routes (8 handlers)' e 'Server Components / SSR dinamico' com better-sqlite3 em web/src/lib/db.ts:1,4."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md linhas 37-51: 'Ajuste (mecanico, baixo risco)' vs 'Reescrita (alto esforco / bloqueante)'."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": false, "evidence": "answer.md linha 1: 'Maximo de passos atingido. Resumo do que foi mapeado e veredito.' O agente contexto-longo tinha steps:20 e encerrou por cap, nao por conclusao."}], "summary": {"passed": 4, "failed": 1, "total": 5, "pass_rate": 0.8}, "execution_metrics": {"tool_calls": {"subagent": 1}, "total_tool_calls": 1, "total_steps": 20, "errors_encountered": 1, "output_chars": 6511, "transcript_chars": 6511}, "notes": ["contexto-longo (beam-free) consumiu 20 steps e parou por cap.", "Ainda assim entregou veredito e citacoes corretas; o cap cortou a profundidade, nao a utilidade."]}}, {"id": "eval-2-repo-without_skill", "prompt": "da uma olhada no repo C:\\Users\\jryan\\Desktop\\elosys inteiro e me diz o que quebra se eu trocar Next por Vite", "eval_id": 2, "outputs": [{"name": "answer.md", "type": "text", "content": "Li o repo inteiro (Python + `web/` + docs). Resumo curto antes do detalhe:\n\n> Trocar Next por Vite aqui n\u00c3\u00a3o \u00c3\u00a9 \"trocar bundler\", \u00c3\u00a9 **tirar o servidor**. O app \u00c3\u00a9 100% Server Components lendo um SQLite de **12,3 GB** (`elosys.db`) direto no processo Node. No Vite n\u00c3\u00a3o existe esse processo. Tudo que hoje \u00c3\u00a9 \"render no servidor com dados\" vira \"cliente pede JSON pra uma API que voc\u00c3\u00aa precisa criar\".\n\n---\n\n## O que N\u00c3\u0192O quebra (a boa not\u00c3\u00adcia)\n\n`src/lib/queries.ts` (105 KB, ~41 fun\u00c3\u00a7\u00c3\u00b5es de query) e `src/lib/db.ts` **n\u00c3\u00a3o importam nada de Next**. S\u00c3\u00b3 `better-sqlite3` + `node:path`. Ou seja: os 105 KB de SQL \u00e2\u20ac\u201d que \u00c3\u00a9 onde est\u00c3\u00a1 o valor real do projeto \u00e2\u20ac\u201d sobrevivem intactos se voc\u00c3\u00aa colocar qualquer servidor na frente (Express/Hono/Fastify).\n\nTamb\u00c3\u00a9m s\u00c3\u00a3o port\u00c3\u00a1veis sem toque: `lib/format.ts`, `lib/normalize.ts`, `lib/graph-cycles.ts`, `lib/stats.ts` (usa `db()` s\u00c3\u00b3), todos os componentes de UI, `globals.css` (Tailwind v4 via `@tailwindcss/postcss`, que o Vite tamb\u00c3\u00a9m aceita).\n\n---\n\n## O que quebra \u00e2\u20ac\u201d n\u00c3\u00advel 1 (build n\u00c3\u00a3o compila)\n\n| Item | Onde | Por qu\u00c3\u00aa |\n|---|---|---|\n| `PageProps<\"/\">`, `PageProps<\"/politico/[id]\">`, `LayoutProps<\"/\">` | **12 p\u00c3\u00a1ginas** + `layout.tsx` | S\u00c3\u00a3o tipos globais gerados pelo Next 16 em `.next/types` (typed routes). No Vite: `Cannot find name 'PageProps'`. |\n| `better-sqlite3` no bundle do browser | `src/components/entity-profile-view.tsx:3` | Importa `getCompanyEarmarks` **em runtime** (n\u00c3\u00a3o \u00c3\u00a9 `import type`). Hoje \u00c3\u00a9 server component, ent\u00c3\u00a3o passa. No Vite vira client component e o Rollup tenta empacotar m\u00c3\u00b3dulo nativo `.node` + `fs` \u00e2\u2020\u2019 explode. |\n| `next/font/google` | `src/app/layout.tsx:2` | Some. E n\u00c3\u00a3o \u00c3\u00a9 cosm\u00c3\u00a9tico: `globals.css:10-11` mapeia `--font-sans: var(--font-inter)` e `--font-mono: var(--font-jetbrains-mono)`. Sem `next/font`, essas vari\u00c3\u00a1veis ficam **undefined** e a UI inteira cai pra fonte padr\u00c3\u00a3o do sistema (o app \u00c3\u00a9 todo mono-label, muda muito o visual). |\n| `next-env.d.ts`, `eslint-config-next`, plugin `next` no `tsconfig.json:16-20` | raiz do `web/` | Refer\u00c3\u00aancias mortas. |\n\n---\n\n## O que quebra \u00e2\u20ac\u201d n\u00c3\u00advel 2 (o problema de arquitetura)\n\n**11 p\u00c3\u00a1ginas renderizam dados direto do SQLite no servidor:**\n\n`page.tsx` (home), `emendas`, `ranking`, `politico/[id]`, `cpf/[cpf]`, `cnpj/[cnpj]`, `sinais/analise-ia`, `sinais/despesa-desproporcional`, `sinais/discurso`, `sinais/doacao-circular`, `sinais/socio-fornecedor`.\n\nCada uma chama queries s\u00c3\u00adncronas (`getHomeStats`, `getPersonHeader`, `getEntityProfile`, `getFinancePage`, `getEarmarkPayments`\u00e2\u20ac\u00a6). No Vite **todas** precisam virar:\n\n1. um endpoint novo (voc\u00c3\u00aa tem 8 rotas `/api` hoje, vai precisar de ~11 endpoints de p\u00c3\u00a1gina), **ou**\n2. um endpoint gordo por p\u00c3\u00a1gina que devolve tudo de uma vez (recomendado, sen\u00c3\u00a3o a ficha do pol\u00c3\u00adtico vira 12 requests em cascata \u00e2\u20ac\u201d `politico/[id]/page.tsx` chama 15 fun\u00c3\u00a7\u00c3\u00b5es diferentes).\n\nDetalhes que doem:\n- `layout.tsx:34` chama `getSidebarCounts()` **em todo render** pra passar os badges da sidebar. No Vite isso vira um fetch global no boot do app.\n- `cnpj/[cnpj]` e `cpf/[cpf]` usam `redirect()` e `notFound()` do `next/navigation` \u00e2\u20ac\u201d precisam virar redirect de loader / rota 404.\n- `entity-profile-view.tsx:23` resolve `getCompanyEarmarks` durante o render \u00e2\u2020\u2019 tem que virar prop ou fetch.\n\n**Ganho que voc\u00c3\u00aa perde:** hoje \u00c3\u00a9 SSR puro, uma ida ao banco, sem round-trip HTTP. O `servir.bat:3` diz literalmente *\"modo PRODUCAO (rapido, sem 'carregando')\"*. Com Vite SPA, toda navega\u00c3\u00a7\u00c3\u00a3o vira skeleton \u00e2\u2020\u2019 fetch \u00e2\u2020\u2019 render. Os 11 arquivos `loading.tsx` existem justamente pra disfar\u00c3\u00a7ar isso no Next; no Vite voc\u00c3\u00aa reimplementa com `useNavigation`/Suspense ou aceita o flash.\n\n**SEO:** hoje o HTML sai preenchido (\u00c3\u00a9 um app de dados p\u00c3\u00bablicos, provavelmente vai ser indexado). Vite SPA entrega `<div id=\"root\"></div>`.\n\n---\n\n## O que quebra \u00e2\u20ac\u201d n\u00c3\u00advel 3 (reescrita mec\u00c3\u00a2nica, chata mas previs\u00c3\u00advel)\n\n| API do Next | Usos | Vira |\n|---|---|---|\n| `next/link` | **13 arquivos** | `react-router` `<Link>` |\n| `useRouter().push` | 6 arquivos (`year-select`, `expense-category-select`, `command-palette`, `graph-canvas`, `politician-network`, `cycle-graph`) | `useNavigate()` |\n| `usePathname` | 3 (`app-shell`, `sidebar`, `topbar`) | `useLocation().pathname` |\n| `useSearchParams` | 1 (`graph-canvas.tsx:350`) | `useSearchParams` do react-router (quase igual, mas o `Suspense` de `grafo/page.tsx:12` deixa de ser necess\u00c3\u00a1rio) |\n| `next/dynamic` | `assets-curve-chart-lazy.tsx` | `React.lazy` + `<Suspense>` |\n| `NextResponse.json` | 8 rotas `api/*/route.ts` | `res.json()` de qualquer framework |\n| `export const dynamic = \"force-dynamic\"` | 12 p\u00c3\u00a1ginas | n\u00c3\u00a3o existe (n\u00c3\u00a3o tem cache pra desligar) |\n| `metadata` | `layout.tsx:19` | `<title>` no `index.html` ou react-helmet |\n| script anti-flash de tema | `layout.tsx:26-31,43` | inline no `index.html` |\n| 11 `loading.tsx` | \u00e2\u20ac\u201d | Suspense/estado de navega\u00c3\u00a7\u00c3\u00a3o manual |\n\nO `AGENTS.md` do `web/` tamb\u00c3\u00a9m \u00c3\u00a9 gerado pelo `next dev` (o pr\u00c3\u00b3prio arquivo diz isso) \u00e2\u20ac\u201d morre junto.\n\n---\n\n## Custo real\n\n| Etapa | Esfor\u00c3\u00a7o |\n|---|---|\n| Servidor HTTP + reaproveitar `queries.ts` (8 rotas existentes) | 3-4 h |\n| ~11 endpoints de p\u00c3\u00a1gina (ou loaders) | 1 dia |\n| 12 p\u00c3\u00a1ginas \u00e2\u2020\u2019 rotas react-router (s\u00c3\u00a3o quase s\u00c3\u00b3 apresenta\u00c3\u00a7\u00c3\u00a3o, o JSX \u00c3\u00a9 reaproveit\u00c3\u00a1vel) | 1-2 dias |\n| Links/router/pathname/searchParams | 2 h |\n| Fontes self-hosted (`@fontsource` ou `@font-face`) | 30 min |\n| `loading.tsx` \u00e2\u2020\u2019 skeletons manuais | 3 h |\n| Config Vite (externalizar `better-sqlite3`, proxy de dev, `PageProps` fora, ESLint) | 2 h |\n| Regress\u00c3\u00a3o nas 5 p\u00c3\u00a1ginas de sinais + grafo | 1 dia |\n\n**~3 a 5 dias** de trabalho l\u00c3\u00adquido, com risco concentrado nas p\u00c3\u00a1ginas de sinais e no grafo (o grafo j\u00c3\u00a1 \u00c3\u00a9 client-side e fala com `/api`, \u00c3\u00a9 o peda\u00c3\u00a7o que migra mais f\u00c3\u00a1cil).\n\n---\n\n## Minha leitura\n\nN\u00c3\u00a3o fa\u00c3\u00a7a, a menos que exista um motivo concreto que eu n\u00c3\u00a3o vi no repo:\n\n- **N\u00c3\u00a3o \u00c3\u00a9 pra deploy est\u00c3\u00a1tico** \u00e2\u20ac\u201d o banco tem 12 GB e \u00c3\u00a9 lido em processo. `output: \"export\"` do Next tamb\u00c3\u00a9m n\u00c3\u00a3o resolveria. O app \u00c3\u00a9 local/VPS de qualquer jeito.\n- **N\u00c3\u00a3o \u00c3\u00a9 pra performance** \u00e2\u20ac\u201d hoje \u00c3\u00a9 SSR s\u00c3\u00adncrono, mais r\u00c3\u00a1pido que SPA+API.\n- **N\u00c3\u00a3o \u00c3\u00a9 pra simplificar** \u00e2\u20ac\u201d voc\u00c3\u00aa troca \"Next App Router\" por \"Vite + React Router + servidor HTTP pr\u00c3\u00b3prio + config de m\u00c3\u00b3dulo nativo\". Mais pe\u00c3\u00a7as, n\u00c3\u00a3o menos.\n\nSe o objetivo \u00c3\u00a9 **n\u00c3\u00a3o ficar preso ao Next**, o caminho que d\u00c3\u00a1 o mesmo resultado com metade do risco: **extrair a API primeiro, ainda dentro do Next**. `queries.ts` j\u00c3\u00a1 \u00c3\u00a9 agn\u00c3\u00b3stico \u00e2\u20ac\u201d criar `/api/pagina/*`, apontar as p\u00c3\u00a1ginas pra esses endpoints, e s\u00c3\u00b3 depois o front vira descart\u00c3\u00a1vel. A\u00c3\u00ad a migra\u00c3\u00a7\u00c3\u00a3o pra Vite (ou qualquer coisa) vira troca de casca, n\u00c3\u00a3o de funda\u00c3\u00a7\u00c3\u00a3o."}], "grading": {"expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md linha 3: 'Trocar Next por Vite aqui nao e trocar bundler, e tirar o servidor' + 'Nao faca, a menos que exista um motivo concreto'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita src/app/layout.tsx:2, globals.css:10-11, entity-profile-view.tsx:3, layout.tsx:34, graph-canvas.tsx:350, servir.bat:3."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md: 'o app e 100% Server Components lendo um SQLite de 12,3 GB (elosys.db) direto no processo Node' + tabela das 8 rotas api."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md separa 'O que NAO quebra (a boa noticia)' de 'nivel 1/2/3' e fecha com tabela 'Custo real' por etapa."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com 'Minha leitura' e recomendacao final; nao ha mencao a limite de passos."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"read": 3, "grep": 4, "shell": 5}, "total_tool_calls": 12, "total_steps": 12, "errors_encountered": 0, "output_chars": 6774, "transcript_chars": 6774}, "notes": ["Achados que o braco com skill nao teve tempo de alcancar: next/font quebrando as variaveis CSS (globals.css:10-11), import runtime de better-sqlite3 em entity-profile-view.tsx:3, banco de 12,3 GB."]}}, {"id": "eval-3-audio-with_skill", "prompt": "transcreve esse audio do cliente e me diz o que ele quer: C:\\Users\\jryan\\Downloads\\Produtividade papo.mp3", "eval_id": 3, "outputs": [{"name": "answer.md", "type": "text", "content": "A transcri\u00c3\u00a7\u00c3\u00a3o parcial funcionou mas o modelo travou no meio (erro de mem\u00c3\u00b3ria MKL). Vou tentar com o modelo menor para cobrir o arquivo inteiro.\n\nFaltou a faixa de ~30 a 60s. Vou preencher o intervalo.\n\nLimite de passos atingido \u00e2\u20ac\u201d n\u00c3\u00a3o posso fazer mais chamadas de ferramenta. Segue o que consegui concluir com o material j\u00c3\u00a1 transcrito.\n\n## 1. Transcri\u00c3\u00a7\u00c3\u00a3o fiel (~2min55s, PT-BR)\n\nModelo usado: faster-whisper `small` (o `medium` travou com erro de mem\u00c3\u00b3ria MKL no meio; o `small` rodou em passagens sobrepostas). Trechos de 23s a ~60s sa\u00c3\u00adram degradados \u00e2\u20ac\u201d sinal do \u00c3\u00a1udio ali parece ruim ou tem voz falando por cima.\n\n```\n[0.7 -> 17]   Bill Gates disse que, como voc\u00c3\u00aa tenta falar sobre produtividade, ele disse que\n              prefere escolher uma pessoa pregui\u00c3\u00a7osa para fazer um trabalho, porque essa\n              pessoa pregui\u00c3\u00a7osa vai escolher uma maneira f\u00c3\u00a1cil de resolver esse trabalho.\n[17 -> 21]    O que voc\u00c3\u00aa acha disso, Michelle?\n[21 -> 23]    Agora \u00c3\u00a9 s\u00c3\u00b3 escolher. / [inaud\u00c3\u00advel parcial]\n[23 -> 34]    Eu vou colocar, primeiro, assim, eu n\u00c3\u00a3o acho que a palavra est\u00c3\u00a1 forte,\n              porque \u00c3\u00a9 distante, n\u00c3\u00a9? ... Fala.\n[34 -> 46]    Por\u00c3\u00a9m, eu acho que eu, por exemplo, vou me colocar na lista do trabalho.\n              [inaud\u00c3\u00advel] ... Por que que pessoas assim, n\u00c3\u00a9?\n[46 -> 58]    Porque... queriam mais facilidade de executar o trabalho, por causa disso,\n              porque as pessoas s\u00c3\u00a3o mais tranquilas.\n[59 -> 69]    E muitas das vezes, as pessoas que querem fazer 2, 3, 4, 5... coisa bem feita,\n              n\u00c3\u00a3o executa nenhuma coisa direito.\n[69 -> 83]    Ent\u00c3\u00a3o eu acho que \u00c3\u00a9 quase por forte. Uma coisa s\u00c3\u00b3 que est\u00c3\u00a1 bem feito aquela\n              coisa, mesmo que seja papo de tartaruga, a gente vai executar bem feito.\n[83 -> 90]    [pausa / transi\u00c3\u00a7\u00c3\u00a3o]\n[90 -> 111]   Eu vou lan\u00c3\u00a7ar a minha agora, t\u00c3\u00a1? O que ele quer dizer sobre produtividade \u00c3\u00a9\n              que voc\u00c3\u00aa quer aumentar produtividade no seu trabalho? Encontre uma pessoa\n              pregui\u00c3\u00a7osa, porque essa pessoa vai achar uma maneira f\u00c3\u00a1cil de fazer esse\n              trabalho. Porque as pessoas pregui\u00c3\u00a7osas costumam achar solu\u00c3\u00a7\u00c3\u00b5es inteligentes,\n              entendeu?\n[111 -> 129]  Ent\u00c3\u00a3o, por exemplo, n\u00c3\u00a3o \u00c3\u00a9 que ela tem foco. Ao contr\u00c3\u00a1rio, ela quer diminuir o\n              excesso de carga de uma coisa que \u00c3\u00a9 desnecess\u00c3\u00a1ria, que voc\u00c3\u00aa pode executar de\n              uma forma mais f\u00c3\u00a1cil e pr\u00c3\u00a1tica. Ent\u00c3\u00a3o pessoas mais pregui\u00c3\u00a7osas, entre aspas,\n              que ele joga bem assim, pregui\u00c3\u00a7osas...\n[129 -> 142]  ...elas costumam ter esse tipo de criatividade que as pessoas que n\u00c3\u00a3o s\u00c3\u00a3o\n              pregui\u00c3\u00a7osas n\u00c3\u00a3o t\u00c3\u00aam. N\u00c3\u00a3o se importam em se esfor\u00c3\u00a7ar ao m\u00c3\u00a1ximo, por\u00c3\u00a9m n\u00c3\u00a3o v\u00c3\u00a3o\n              ter resultados criativos e inteligentes.\n[142 -> 157]  E a\u00c3\u00ad a produtividade n\u00c3\u00a3o \u00c3\u00a9 sobre trabalhar mais, porque ele meteu essa por uma\n              coisa importante. Isso a\u00c3\u00ad \u00c3\u00a9 inerente ao corporativismo. Trabalhar mais n\u00c3\u00a3o\n              significa ser mais produtivo. Ent\u00c3\u00a3o voc\u00c3\u00aa pode trabalhar 200 horas a mais que\n              o fulano e o fulano ser dez vezes mais produtivo que voc\u00c3\u00aa.\n[157 -> 172]  Hoje, por exemplo, a pr\u00c3\u00b3pria intelig\u00c3\u00aancia artificial \u00c3\u00a9 um exemplo claro disso.\n              Que tempo de trabalho n\u00c3\u00a3o \u00c3\u00a9 qualidade. Ent\u00c3\u00a3o, resumindo isso, a minha\n              perspectiva sobre o que ele quis dizer era sobre produtividade no geral.\n```\n\nTrechos problem\u00c3\u00a1ticos (marcaria como `[inaud\u00c3\u00advel]` numa revis\u00c3\u00a3o): ~21-23s, ~34-46s (frases sobre \"colocar na lista\"/\"pessoas assim\" sa\u00c3\u00adram truncadas), e a transi\u00c3\u00a7\u00c3\u00a3o ~83-90s. Palavras espec\u00c3\u00adficas que o modelo claramente errou e n\u00c3\u00a3o consegui confirmar: \"papo de tartaruga\" (~80s, provavelmente outra express\u00c3\u00a3o) e \"inicitido/inerente com o corporativista\" (~148s).\n\n## 2. O que a pessoa quer / pedido impl\u00c3\u00adcito\n\nN\u00c3\u00a3o \u00c3\u00a9 um pedido direto ao agente \u00e2\u20ac\u201d \u00c3\u00a9 uma **conversa gravada entre duas pessoas** (um homem que introduz o tema e uma mulher chamada Michelle). O formato \u00c3\u00a9: ele lan\u00c3\u00a7a uma cita\u00c3\u00a7\u00c3\u00a3o de Bill Gates (\"prefiro contratar uma pessoa pregui\u00c3\u00a7osa, porque ela achar\u00c3\u00a1 um jeito f\u00c3\u00a1cil de fazer o trabalho\"), pede a opini\u00c3\u00a3o dela, e ela desenvolve o racioc\u00c3\u00adnio em dois turnos.\n\nO \"produto\" dessa grava\u00c3\u00a7\u00c3\u00a3o parece ser **conte\u00c3\u00bado de rede/podcast/post** sobre produtividade \u00e2\u20ac\u201d o tom \u00c3\u00a9 de reflex\u00c3\u00a3o para audi\u00c3\u00aancia, n\u00c3\u00a3o de reuni\u00c3\u00a3o. O pedido impl\u00c3\u00adcito para quem recebe esse \u00c3\u00a1udio seria, muito provavelmente: transcrever, resumir ou transformar esse papo em algo public\u00c3\u00a1vel (legenda, post, roteiro).\n\n## 3. Pontos amb\u00c3\u00adguos\n\n- **Quem \u00c3\u00a9 \"Michelle\"** e quem fala primeiro \u00e2\u20ac\u201d n\u00c3\u00a3o h\u00c3\u00a1 apresenta\u00c3\u00a7\u00c3\u00a3o; inferi os pap\u00c3\u00a9is pela ordem das falas.\n- **A fonte da cita\u00c3\u00a7\u00c3\u00a3o**: o falante diz \"Bill Gates disse que, como voc\u00c3\u00aa tenta falar sobre produtividade\u00e2\u20ac\u00a6\" \u00e2\u20ac\u201d a frase est\u00c3\u00a1 gramaticalmente quebrada no \u00c3\u00a1udio; pode ser \"com 70 anos\" (sa\u00c3\u00addo numa passagem) ou \"como voc\u00c3\u00aa\". N\u00c3\u00a3o d\u00c3\u00a1 para saber se ele citou certo.\n- **Trecho ~34-46s**: ela diz \"vou me colocar na lista do trabalho\" \u00e2\u20ac\u201d n\u00c3\u00a3o fica claro se ela se coloca como \"pregui\u00c3\u00a7osa\" ou como \"n\u00c3\u00a3o pregui\u00c3\u00a7osa\". Muda o sentido do argumento dela.\n- **\"Papo de tartaruga\" (~80s)**: express\u00c3\u00a3o provavelmente mal transcrita; o sentido pr\u00c3\u00b3ximo \u00c3\u00a9 \"mesmo que a coisa seja simples/trivial\".\n- **Dura\u00c3\u00a7\u00c3\u00a3o exata vs. transcri\u00c3\u00a7\u00c3\u00a3o**: o arquivo tem ~175s e cobri quase tudo, mas a faixa 83-90s ficou sem fala clara \u00e2\u20ac\u201d pode ser pausa longa ou trecho perdido.\n- **Uso pretendido**: n\u00c3\u00a3o ficou dito se \u00c3\u00a9 pra post, estudo pessoal ou cortes.\n\n## Recomenda\u00c3\u00a7\u00c3\u00a3o para a pr\u00c3\u00b3xima etapa\n\nSe quiser uma transcri\u00c3\u00a7\u00c3\u00a3o limpa, o caminho \u00c3\u00a9: usar o modelo `medium` **fatiando o \u00c3\u00a1udio em blocos de 30s** (o erro `mkl_malloc` ocorreu no encode cont\u00c3\u00adnuo; por peda\u00c3\u00a7o deve passar), ou instalar `faster-whisper-large-v3` se houver RAM. Depois, para os trechos 21-46s, um segundo passe com `vad_filter=False` e `condition_on_previous_text=False` costuma destravar essas frases fracas. Se o objetivo for conte\u00c3\u00bado, o resumo em 3-4 frases j\u00c3\u00a1 sai do texto acima: produtividade n\u00c3\u00a3o \u00c3\u00a9 trabalhar mais, \u00c3\u00a9 eliminar carga desnecess\u00c3\u00a1ria \u00e2\u20ac\u201d e a pessoa \"pregui\u00c3\u00a7osa\" acha o caminho curto."}], "grading": {"expectations": [{"text": "Entrega transcricao com timestamps", "passed": true, "evidence": "answer.md linhas 11-47: bloco com timestamps [0.7 -> 17] ate [157 -> 172], fala por fala."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 2: 'Nao e um pedido direto ao agente - e uma conversa gravada... o pedido implicito seria transcrever, resumir ou transformar esse papo em algo publicavel'."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": true, "evidence": "answer.md usa [inaudivel] e [inaudivel parcial] em 21-23s e 34-46s, e lista palavras que 'o modelo claramente errou e nao consegui confirmar' (linha 49)."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": false, "evidence": "answer.md linha 5: 'Limite de passos atingido - nao posso fazer mais chamadas de ferramenta.' O agente audio tinha steps:12 e parou no meio da cobertura."}], "summary": {"passed": 3, "failed": 1, "total": 4, "pass_rate": 0.75}, "execution_metrics": {"tool_calls": {"shell": 8}, "total_tool_calls": 8, "total_steps": 12, "errors_encountered": 1, "output_chars": 6199, "transcript_chars": 6199}, "notes": ["O agente audio NAO ouviu nativamente: rodou faster-whisper via shell (modelo small). A premissa de que mimo-v2.6 ingere audio direto nao foi provada.", "Erro de memoria MKL com o modelo medium; caiu para small e perdeu qualidade em 23-60s."]}}, {"id": "eval-3-audio-without_skill", "prompt": "transcreve esse audio do cliente e me diz o que ele quer: C:\\Users\\jryan\\Downloads\\Produtividade papo.mp3", "eval_id": 3, "outputs": [{"name": "answer.md", "type": "text", "content": "Transcrevi aqui na m\u00c3\u00a1quina (faster-whisper local, sem API). \u00c3\ufffdudio de **2min54s**, com 3 pessoas falando: um apresentador, **Michelle** e **Johnny** (a opini\u00c3\u00a3o do Johnny \u00c3\u00a9 lida pelo apresentador).\n\n## Transcri\u00c3\u00a7\u00c3\u00a3o (resumida, com timestamps)\n\n**[00:00] Apresentador** \u00e2\u20ac\u201d cita Bill Gates: *\"prefiro escolher uma pessoa pregui\u00c3\u00a7osa para fazer um trabalho, porque ela vai achar uma maneira f\u00c3\u00a1cil de resolver\"*. E pergunta: \"O que voc\u00c3\u00aa acha disso, Michelle?\"\n\n**[00:22] Michelle** \u00e2\u20ac\u201d n\u00c3\u00a3o acha a palavra errada. Diz que se coloca na lista dos pregui\u00c3\u00a7osos: quem quer fazer 10 coisas ao mesmo tempo n\u00c3\u00a3o executa nenhuma direito. Melhor uma coisa s\u00c3\u00b3, bem feita, \"mesmo que seja passo de tartaruga\".\n\n**[01:26] Apresentador** \u00e2\u20ac\u201d \"vou lan\u00c3\u00a7ar a minha agora, a opini\u00c3\u00a3o de Johnny\":\n- O pregui\u00c3\u00a7oso acha **solu\u00c3\u00a7\u00c3\u00b5es inteligentes** porque quer **reduzir carga**, n\u00c3\u00a3o porque tem foco.\n- Essa \"pregui\u00c3\u00a7a\" \u00c3\u00a9 criatividade: quem se esfor\u00c3\u00a7a ao m\u00c3\u00a1ximo n\u00c3\u00a3o chega em resultado criativo.\n- **Trabalhar mais \u00e2\u2030\u00a0 ser mais produtivo** \u00e2\u20ac\u201d \"pode trabalhar 200 horas a mais que o fulano e ele ser dez vezes mais produtivo\".\n- IA \u00c3\u00a9 o exemplo atual de que **tempo de trabalho n\u00c3\u00a3o \u00c3\u00a9 qualidade**.\n\n**[02:53] Fim.**\n\n## O que ele quer\n\nSendo direto: **esse \u00c3\u00a1udio n\u00c3\u00a3o tem pedido nenhum**. N\u00c3\u00a3o tem briefing, n\u00c3\u00a3o tem \"preciso de X\", n\u00c3\u00a3o tem cliente pedindo or\u00c3\u00a7amento. \u00c3\u2030 um **papo gravado sobre produtividade** (formato podcast/roda de conversa, com apresentador conduzindo as respostas). Algu\u00c3\u00a9m mandou a grava\u00c3\u00a7\u00c3\u00a3o, mas n\u00c3\u00a3o falou o que quer que seja feito com ela.\n\nO que d\u00c3\u00a1 pra inferir do conte\u00c3\u00bado (e s\u00c3\u00b3 isso):\n- \u00c3\u2030 mat\u00c3\u00a9ria-prima de **conte\u00c3\u00bado**: corte pra Reels/Shorts, carrossel, post sobre produtividade, ou epis\u00c3\u00b3dio de podcast.\n- O \u00c3\u00a2ngulo forte \u00c3\u00a9 o paradoxo do Bill Gates + \"trabalhar mais n\u00c3\u00a3o \u00c3\u00a9 produzir mais\" + IA.\n- Tem 3 nomes pra usar (Michelle, Johnny) \u00e2\u20ac\u201d se for conte\u00c3\u00bado de marca, precisa saber quem s\u00c3\u00a3o.\n\nMe diz o que ele pediu por fora (ou me manda a mensagem dele) e eu j\u00c3\u00a1 transformo isso no formato certo. Se quiser, tamb\u00c3\u00a9m gero o corte/carrossel direto daqui.\n\nArquivos gerados:\n- `C:\\Users\\jryan\\AppData\\Local\\Temp\\opencode\\papo_transcricao.txt` (com timestamps)\n- `C:\\Users\\jryan\\AppData\\Local\\Temp\\opencode\\papo_transcricao_limpa.txt` (vers\u00c3\u00a3o leg\u00c3\u00advel, falantes separados)\n- `...\\papo_transcricao.json` (segmentos pra edi\u00c3\u00a7\u00c3\u00a3o)\n\nObs.: usei o modelo `small` porque o `medium` estourou mem\u00c3\u00b3ria (s\u00c3\u00b3 0,6 GB de RAM livre dos 8 GB). Se algum trecho ficar estranho, d\u00c3\u00a1 pra refazer com o medium depois de fechar uns programas."}], "grading": {"expectations": [{"text": "Entrega transcricao com timestamps", "passed": false, "evidence": "answer.md linha 3: 'Transcricao (resumida, com timestamps)' - entrega resumo por bloco ([00:00], [00:22], [01:26]), nao transcricao fiel do que foi dito."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 'O que ele quer': 'esse audio nao tem pedido nenhum... e um papo gravado sobre produtividade' + inferencias de uso."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": false, "evidence": "Nenhum trecho marcado como inaudivel. Atribui falas a 'Johnny' e 'Michelle' sem ressalva de incerteza, e apresenta o resumo como se cobrisse o audio inteiro."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com arquivos gerados e observacao sobre o modelo small; nao ha mencao a limite de passos."}], "summary": {"passed": 2, "failed": 2, "total": 4, "pass_rate": 0.5}, "execution_metrics": {"tool_calls": {"shell": 6}, "total_tool_calls": 6, "total_steps": 10, "errors_encountered": 1, "output_chars": 2582, "transcript_chars": 2582}, "notes": ["Tambem usou faster-whisper local. Identificou 3 falantes e separou melhor que o braco com skill, mas resumiu em vez de transcrever."]}}, {"id": "eval-4-typo-with_skill", "prompt": "corrige esse typo na linha 12 do README, ta escrito 'recieve'", "eval_id": 4, "outputs": [], "grading": {"expectations": [{"text": "Corrige 'recieve' para 'receive' na linha 12", "passed": true, "evidence": "Linha 12 do work/README.md agora: 'Se voce receive um erro, reinicie.'"}, {"text": "Nao altera outras linhas do arquivo", "passed": true, "evidence": "git diff --no-index --stat contra o fixture: '1 file changed, 1 insertion(+), 1 deletion(-)'. Compare-Object com o braco sem skill: arquivos identicos."}, {"text": "Nao delega a tarefa para subagente", "passed": true, "evidence": "Executado no agente principal com uma chamada de edit. Nenhum subagente spawnado neste braco."}], "summary": {"passed": 3, "failed": 0, "total": 3, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"edit": 1}, "total_tool_calls": 1, "total_steps": 1, "errors_encountered": 0, "output_chars": 0, "transcript_chars": 0}, "notes": ["Restraint passou: tarefa de um passo resolvida sem subagente."]}}, {"id": "eval-4-typo-without_skill", "prompt": "corrige esse typo na linha 12 do README, ta escrito 'recieve'", "eval_id": 4, "outputs": [], "grading": {"expectations": [{"text": "Corrige 'recieve' para 'receive' na linha 12", "passed": true, "evidence": "Linha 12 do work/README.md: 'Se voce receive um erro, reinicie.' Resposta do subagente confirma a troca."}, {"text": "Nao altera outras linhas do arquivo", "passed": true, "evidence": "Compare-Object com o braco com skill: arquivos identicos. So a linha 12 mudou."}, {"text": "Nao delega a tarefa para subagente", "passed": true, "evidence": "O baseline rodou em um unico subagente general proibido de delegar; nao houve neto."}], "summary": {"passed": 3, "failed": 0, "total": 3, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"read": 1, "edit": 1}, "total_tool_calls": 2, "total_steps": 1, "errors_encountered": 0, "output_chars": 0, "transcript_chars": 0}, "notes": ["Baseline foi proibido de delegar, entao o criterio de restraint nao diferencia os bracos neste eval."]}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "orquestrador", "skill_path": "C:/Users/jryan/.config/opencode/skills/orquestrador", "executor_model": "opencode/deepseek-v4.1-flash-free", "analyzer_model": "opencode/deepseek-v4.1-flash-free", "timestamp": "2026-10-23T20:52:21Z", "evals_run": [1, 2, 3, 4], "runs_per_configuration": 1, "iteration": 1, "caveats": ["1 run por configuracao: nao ha variancia amostral, so sinal direcional.", "A skill esta instalada globalmente; o braco sem skill foi instruido explicitamente a nao usar subagentes nem skills.", "No eval 1 o agente pai criou o fixture e conhecia o CSS original, o que contamina a precisao visual do braco com skill.", "Tokens do eval 4 com skill nao foram instrumentados (execucao direta no agente principal)."]}, "runs": [{"eval_id": 1, "eval_name": "Print de dashboard feio", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 0.833, "passed": 5, "failed": 1, "total": 6, "time_seconds": 23.0, "tokens": 39314, "tool_calls": 2, "errors": 0}, "expectations": [{"text": "Aponta contraste insuficiente como problema", "passed": true, "evidence": "outputs/answer.md item 1: 'Contraste no limite do ilegivel... text-zinc-100 para numeros/titulos e text-zinc-400 para labels'. Confirmado em subagent-visao.md secao 4 (Contraste) e subagent-frontend.md item 1."}, {"text": "Aponta desalinhamento ou altura inconsistente dos cards de KPI", "passed": true, "evidence": "subagent-frontend.md item 2: 'o card Fechados esta deslocado ~20px para baixo'. Integrado no answer.md item 2."}, {"text": "Aponta overflow horizontal / conteudo estourando a viewport", "passed": true, "evidence": "subagent-frontend.md item 3: 'aparece uma barra de rolagem horizontal (algo estoura a viewport)' + 'overflow-x: hidden no root'. ATENCAO: o pai tambem sabia que o bloco do grafico estava em width:120% por ter criado o fixture, entao a precisao do '120%' no answer.md nao e evidencia limpa de visao."}, {"text": "Entrega mudancas concretas com propriedade CSS/Tailwind e valor sugerido", "passed": true, "evidence": "answer.md: 'text-zinc-100 / text-zinc-400', 'grid-cols-3 gap-4 items-stretch', 'max-w-6xl mx-auto + overflow-x: hidden'."}, {"text": "Nao afirma ter aplicado ou verificado visualmente uma mudanca que nao fez", "passed": true, "evidence": "answer.md, Ressalva: 'Nao editei nada. Se quiser, aplico e re-screenshot pra comparar.' subagent-frontend.md: 'Nao conferi visualmente o resultado'."}, {"text": "Nao descreve elementos inexistentes na imagem (ex.: controles de paginacao)", "passed": false, "evidence": "subagent-visao.md secao 1 linha 12 e secao 2 descrevem 'controles de paginacao/nav (setas esquerda/direita com slider/barra central)' no rodape. No print nao existe paginacao: aquilo e a scrollbar horizontal. Alucinacao de elemento."}], "notes": ["Braco orquestrado: 2 subagentes (visao + frontend) em paralelo, sintese no pai.", "Contaminacao: o agente pai criou o fixture e conhecia o CSS original; a precisao do '120%' nao prova visao.", "visao alucinou controles de paginacao onde havia scrollbar horizontal."]}, {"eval_id": 1, "eval_name": "Print de dashboard feio", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 32.6, "tokens": 3873, "tool_calls": 1, "errors": 0}, "expectations": [{"text": "Aponta contraste insuficiente como problema", "passed": true, "evidence": "answer.md item 5: 'Contraste no limite do ilegivel... esta por volta de 2:1, o minimo aceitavel e 4,5:1'."}, {"text": "Aponta desalinhamento ou altura inconsistente dos cards de KPI", "passed": true, "evidence": "answer.md item 1: 'o card 3 esta deslocado uns 25px pra baixo... o grid nao existe'."}, {"text": "Aponta overflow horizontal / conteudo estourando a viewport", "passed": true, "evidence": "answer.md item 3: 'Scrollbar horizontal na pagina... significa que algo estourou a largura'."}, {"text": "Entrega mudancas concretas com propriedade CSS/Tailwind e valor sugerido", "passed": true, "evidence": "answer.md 'Como eu montaria': '3 cards iguais, 1fr cada, gap 24, mesma altura', escala de espacamento 8/16/24/32, container unico."}, {"text": "Nao afirma ter aplicado ou verificado visualmente uma mudanca que nao fez", "passed": true, "evidence": "answer.md termina em recomendacao ('Se quiser o caminho mais curto...'); nao afirma ter editado nem verificado."}, {"text": "Nao descreve elementos inexistentes na imagem (ex.: controles de paginacao)", "passed": true, "evidence": "Descreve a barra inferior como 'scrollbar horizontal', que e o que ela e. Nao inventou paginacao nem controles."}], "notes": ["Primeira tentativa do baseline abriu ugly.html e leu os hex do fonte; foi descartada e refeita com a regra 'use apenas a imagem'."]}, {"eval_id": 2, "eval_name": "Migracao Next para Vite em repo real", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 0.8, "passed": 4, "failed": 1, "total": 5, "time_seconds": 194.5, "tokens": 133537, "tool_calls": 1, "errors": 1}, "expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md linha 4: 'Nao vale a pena trocar Next por Vite puro... Vite e so bundler/dev-server'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita web/package.json:6-8, web/tsconfig.json:19-21, web/src/app/layout.tsx:1-2, web/src/app/api/finance/route.ts:1,12, web/src/lib/db.ts:1,4 e mais."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md linhas 16-24: secoes 'API routes (8 handlers)' e 'Server Components / SSR dinamico' com better-sqlite3 em web/src/lib/db.ts:1,4."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md linhas 37-51: 'Ajuste (mecanico, baixo risco)' vs 'Reescrita (alto esforco / bloqueante)'."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": false, "evidence": "answer.md linha 1: 'Maximo de passos atingido. Resumo do que foi mapeado e veredito.' O agente contexto-longo tinha steps:20 e encerrou por cap, nao por conclusao."}], "notes": ["contexto-longo (beam-free) consumiu 20 steps e parou por cap.", "Ainda assim entregou veredito e citacoes corretas; o cap cortou a profundidade, nao a utilidade."]}, {"eval_id": 2, "eval_name": "Migracao Next para Vite em repo real", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 194.9, "tokens": 41687, "tool_calls": 12, "errors": 0}, "expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md linha 3: 'Trocar Next por Vite aqui nao e trocar bundler, e tirar o servidor' + 'Nao faca, a menos que exista um motivo concreto'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita src/app/layout.tsx:2, globals.css:10-11, entity-profile-view.tsx:3, layout.tsx:34, graph-canvas.tsx:350, servir.bat:3."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md: 'o app e 100% Server Components lendo um SQLite de 12,3 GB (elosys.db) direto no processo Node' + tabela das 8 rotas api."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md separa 'O que NAO quebra (a boa noticia)' de 'nivel 1/2/3' e fecha com tabela 'Custo real' por etapa."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com 'Minha leitura' e recomendacao final; nao ha mencao a limite de passos."}], "notes": ["Achados que o braco com skill nao teve tempo de alcancar: next/font quebrando as variaveis CSS (globals.css:10-11), import runtime de better-sqlite3 em entity-profile-view.tsx:3, banco de 12,3 GB."]}, {"eval_id": 3, "eval_name": "Transcricao de audio de cliente", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 0.75, "passed": 3, "failed": 1, "total": 4, "time_seconds": 368.7, "tokens": 11712, "tool_calls": 8, "errors": 1}, "expectations": [{"text": "Entrega transcricao com timestamps", "passed": true, "evidence": "answer.md linhas 11-47: bloco com timestamps [0.7 -> 17] ate [157 -> 172], fala por fala."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 2: 'Nao e um pedido direto ao agente - e uma conversa gravada... o pedido implicito seria transcrever, resumir ou transformar esse papo em algo publicavel'."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": true, "evidence": "answer.md usa [inaudivel] e [inaudivel parcial] em 21-23s e 34-46s, e lista palavras que 'o modelo claramente errou e nao consegui confirmar' (linha 49)."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": false, "evidence": "answer.md linha 5: 'Limite de passos atingido - nao posso fazer mais chamadas de ferramenta.' O agente audio tinha steps:12 e parou no meio da cobertura."}], "notes": ["O agente audio NAO ouviu nativamente: rodou faster-whisper via shell (modelo small). A premissa de que mimo-v2.6 ingere audio direto nao foi provada.", "Erro de memoria MKL com o modelo medium; caiu para small e perdeu qualidade em 23-60s."]}, {"eval_id": 3, "eval_name": "Transcricao de audio de cliente", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.5, "passed": 2, "failed": 2, "total": 4, "time_seconds": 290.7, "tokens": 43330, "tool_calls": 6, "errors": 1}, "expectations": [{"text": "Entrega transcricao com timestamps", "passed": false, "evidence": "answer.md linha 3: 'Transcricao (resumida, com timestamps)' - entrega resumo por bloco ([00:00], [00:22], [01:26]), nao transcricao fiel do que foi dito."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 'O que ele quer': 'esse audio nao tem pedido nenhum... e um papo gravado sobre produtividade' + inferencias de uso."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": false, "evidence": "Nenhum trecho marcado como inaudivel. Atribui falas a 'Johnny' e 'Michelle' sem ressalva de incerteza, e apresenta o resumo como se cobrisse o audio inteiro."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com arquivos gerados e observacao sobre o modelo small; nao ha mencao a limite de passos."}], "notes": ["Tambem usou faster-whisper local. Identificou 3 falantes e separou melhor que o braco com skill, mas resumiu em vez de transcrever."]}, {"eval_id": 4, "eval_name": "Restraint: typo de uma linha", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 3, "failed": 0, "total": 3, "time_seconds": 8.0, "tokens": 0, "tool_calls": 1, "errors": 0}, "expectations": [{"text": "Corrige 'recieve' para 'receive' na linha 12", "passed": true, "evidence": "Linha 12 do work/README.md agora: 'Se voce receive um erro, reinicie.'"}, {"text": "Nao altera outras linhas do arquivo", "passed": true, "evidence": "git diff --no-index --stat contra o fixture: '1 file changed, 1 insertion(+), 1 deletion(-)'. Compare-Object com o braco sem skill: arquivos identicos."}, {"text": "Nao delega a tarefa para subagente", "passed": true, "evidence": "Executado no agente principal com uma chamada de edit. Nenhum subagente spawnado neste braco."}], "notes": ["Restraint passou: tarefa de um passo resolvida sem subagente."]}, {"eval_id": 4, "eval_name": "Restraint: typo de uma linha", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 3, "failed": 0, "total": 3, "time_seconds": 5.6, "tokens": 1246, "tool_calls": 2, "errors": 0}, "expectations": [{"text": "Corrige 'recieve' para 'receive' na linha 12", "passed": true, "evidence": "Linha 12 do work/README.md: 'Se voce receive um erro, reinicie.' Resposta do subagente confirma a troca."}, {"text": "Nao altera outras linhas do arquivo", "passed": true, "evidence": "Compare-Object com o braco com skill: arquivos identicos. So a linha 12 mudou."}, {"text": "Nao delega a tarefa para subagente", "passed": true, "evidence": "O baseline rodou em um unico subagente general proibido de delegar; nao houve neto."}], "notes": ["Baseline foi proibido de delegar, entao o criterio de restraint nao diferencia os bracos neste eval."]}], "run_summary": {"with_skill": {"pass_rate": {"mean": 0.8458, "stddev": 0.0938, "min": 0.75, "max": 1.0}, "time_seconds": {"mean": 148.55, "stddev": 146.7093, "min": 8.0, "max": 368.7}, "tokens": {"mean": 46140.75, "stddev": 52438.0984, "min": 0, "max": 133537}}, "without_skill": {"pass_rate": {"mean": 0.875, "stddev": 0.2165, "min": 0.5, "max": 1.0}, "time_seconds": {"mean": 130.95, "stddev": 117.2551, "min": 5.6, "max": 290.7}, "tokens": {"mean": 22534, "stddev": 20004.5176, "min": 1246, "max": 43330}}, "delta": {"pass_rate": "-0.0292", "time_seconds": "+17.6", "tokens": "+23607"}}, "notes": ["Veredito do iteration 1: a skill NAO superou o baseline em pass rate (0.846 vs 0.875).", "Eval 3 foi o unico ganho claro: transcricao fiel com timestamps e [inaudivel] marcado, 3/4 vs 2/4.", "Eval 2 perdeu por cap de steps: contexto-longo (beam-free) parou em 20 steps com 'Maximo de passos atingido'.", "Eval 1 perdeu por alucinacao: visao descreveu controles de paginacao onde havia scrollbar horizontal.", "Custo: delegar multiplicou tokens por ~10 no eval 1 (39.314 vs 3.873) sem ganho de qualidade.", "A premissa de que o agente audio ouve nativamente nao se sustentou: ele rodou faster-whisper via shell, igual ao baseline.", "Restraint passou: o eval 4 nao foi orquestrado em nenhum dos bracos."]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

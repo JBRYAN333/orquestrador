@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "orquestrador", "runs": [{"id": "eval-2-repo-with_skill", "prompt": "da uma olhada no repo C:\\Users\\jryan\\Desktop\\elosys inteiro e me diz o que quebra se eu trocar Next por Vite", "eval_id": 2, "outputs": [{"name": "answer.md", "type": "text", "content": "# Migra\u00c3\u00a7\u00c3\u00a3o Next.js \u00e2\u2020\u2019 Vite: o que quebra em `elosys/web`\n\n## Veredito\n\nN\u00c3\u00a3o vale a pena **a menos que** o objetivo seja virar SPA est\u00c3\u00a1tica servida por outro host \u00e2\u20ac\u201d a arquitetura atual depende de server components + `better-sqlite3` nativo no Node, e o Vite sozinho \u00c3\u00a9 SPA client-side que n\u00c3\u00a3o roda SQLite no browser. Migrar exige manter um backend Node separado (ou SSR manual no Vite), o que anula boa parte do ganho.\n\n## Quebras concretas\n\n- `src/lib/db.ts:1-13` \u00e2\u20ac\u201d `better-sqlite3` \u00c3\u00a9 m\u00c3\u00b3dulo nativo Node; n\u00c3\u00a3o bundle\u00c3\u00a1vel para browser. Quebra a camada de dados inteira se for SPA puro.\n- `src/app/layout.tsx:1-2,7-17` \u00e2\u20ac\u201d `import type { Metadata } from \"next\"` e `Inter`/`JetBrains_Mono` de `next/font/google` (usados em `layout.tsx:33,39`).\n- `src/app/layout.tsx:33` \u00e2\u20ac\u201d `LayoutProps<\"/\">` tipado pelo Next.\n- `src/app/page.tsx:9,11-12` \u00e2\u20ac\u201d `export const dynamic = \"force-dynamic\"` e server component `async` com `searchParams` awaited.\n- `src/app/cpf/[cpf]/page.tsx:6,8,16`, `src/app/cnpj/[cnpj]/page.tsx:6,8,16`, `src/app/politico/[id]/page.tsx:27,29,34` e mais 9 pages com `force-dynamic` + `PageProps<...>` + `await params/searchParams` (grep: 12 ocorr\u00c3\u00aancias de `force-dynamic`).\n- `src/app/api/*` (8 route handlers em `src/app/api/.../route.ts`) \u00e2\u20ac\u201d usam `NextResponse` de `next/server` (12 arquivos importam `next/server`).\n- `src/components/assets-curve-chart-lazy.tsx:3,6-9` \u00e2\u20ac\u201d `next/dynamic` com `{ ssr: false }`.\n- 13 arquivos importam `next/link`; 9 importam `next/navigation` (`useRouter`, `useSearchParams`, `usePathname`, `notFound`, `redirect`) \u00e2\u20ac\u201d precisam virar react-router (ou equivalente).\n- `tsconfig.json:16-20` \u00e2\u20ac\u201d plugin `next` em `plugins` e `next-env.d.ts` em `include`; `eslint.config.mjs:2-4` usa `eslint-config-next`.\n\n## Reescrita vs. ajuste\n\n**Reescrita (estrutural):**\n- Todas as pages server components (`src/app/**/page.tsx`) viram client components que fazem `fetch` \u00c3\u00a0s APIs \u00e2\u20ac\u201d ou o app adota Vite SSR manual. Inclui `layout.tsx` (counts/sidebar via `getSidebarCounts()` rodam no server hoje).\n- API layer: 8 route handlers viram servidor Node separado (Express/Fastify) ou endpoints Vite SSR.\n- Roteamento: App Router (`[id]`, `searchParams`) \u00e2\u2020\u2019 react-router-dom com params/search params.\n\n**Ajuste (mec\u00c3\u00a2nico):**\n- `next/link` \u00e2\u2020\u2019 `<Link>` do router (13 arquivos).\n- `next/navigation` \u00e2\u2020\u2019 hooks do router (9 arquivos).\n- `next/font/google` \u00e2\u2020\u2019 CSS/fontsource (1 arquivo).\n- `next/dynamic` \u00e2\u2020\u2019 `React.lazy` + `Suspense` (1 arquivo).\n- `Metadata` \u00e2\u2020\u2019 `index.html`/helmet.\n- `next-env.d.ts`, tsconfig plugin, eslint config.\n\n## Esfor\u00c3\u00a7o (estimativa)\n\n5\u00e2\u20ac\u201c10 dias de trabalho focado para um dev React familiarizado (\u00e2\u2030\u02c640\u00e2\u20ac\u201c80h), considerando ~84 arquivos em `src/`, 12 pages server components e 8 endpoints. Se mantiver SSR no Vite, sobe para 2\u00e2\u20ac\u201c3 semanas. \u00c3\u2030 estimativa, n\u00c3\u00a3o medi\u00c3\u00a7\u00c3\u00a3o.\n\n## O que n\u00c3\u00a3o verifiquei\n\n- N\u00c3\u00a3o abri todos os `page.tsx` em detalhe (confiei no grep de imports e em 3 leituras: `page.tsx`, `layout.tsx`, `assets-curve-chart-lazy.tsx`).\n- N\u00c3\u00a3o verifiquei se h\u00c3\u00a1 testes de frontend (n\u00c3\u00a3o apareceram no glob de `src`).\n- N\u00c3\u00a3o verifiquei `CLAUDE.md`/`AGENTS.md` do `web/` al\u00c3\u00a9m do AGENTS (li o README completo).\n- N\u00c3\u00a3o verifiquei depend\u00c3\u00aancias de cookies/headers ou middleware (n\u00c3\u00a3o existe `middleware.ts` no glob)."}], "grading": {"expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md: 'Nao vale a pena a menos que o objetivo seja virar SPA estatica servida por outro host - a arquitetura atual depende de server components + better-sqlite3 nativo no Node'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita src/lib/db.ts:1-13, src/app/layout.tsx:1-2,7-17,33, src/app/page.tsx:9,11-12, tsconfig.json:16-20, eslint.config.mjs:2-4 e conta ocorrencias por grep."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md: better-sqlite3 como modulo nativo nao bundleavel, 8 route handlers com NextResponse, 12 pages com force-dynamic + PageProps."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md secoes 'Reescrita (estrutural)' e 'Ajuste (mecanico)' separadas."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com 'Esforco (estimativa)' e 'O que nao verifiquei'. Nao ha mencao a limite de passos. Steps subiu de 20 para 40."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"shell": 9}, "total_tool_calls": 9, "total_steps": 9, "errors_encountered": 0, "output_chars": 3330, "transcript_chars": 0}, "notes": ["Iteracao 2: steps 20 -> 40 e orcamento explicito no prompt do agente.", "Tempo caiu de 194,5 s para 53,2 s e a resposta passou a ser completa: o cap de 20 nao estava protegendo nada, estava cortando a entrega.", "Ainda nao alcancou a profundidade do baseline em next/font (globals.css:10-11), mas declarou o que nao verificou."]}}, {"id": "eval-3-audio-with_skill", "prompt": "transcreve esse audio do cliente e me diz o que ele quer: C:\\Users\\jryan\\Downloads\\Produtividade papo.mp3", "eval_id": 3, "outputs": [{"name": "answer.md", "type": "text", "content": "\u00c3\ufffdudio tem ~2min55s. Vou transcrever com faster-whisper small (caminho local via shell \u00e2\u20ac\u201d n\u00c3\u00a3o aceitei \u00c3\u00a1udio nativamente).\n\nTranscri\u00c3\u00a7\u00c3\u00a3o saiu com encoding quebrado no PowerShell, mas o conte\u00c3\u00bado \u00c3\u00a9 leg\u00c3\u00advel. Vou s\u00c3\u00b3 confirmar alguns trechos d\u00c3\u00babios com um segundo passe curto e sa\u00c3\u00adda em arquivo UTF-8 seguro.\n\nTenho material suficiente (dois passes). Escrevendo a entrega agora.\n\n---\n\n## Caminho usado\n\n**Whisper local (fallback por shell)** \u00e2\u20ac\u201d meu modelo de texto n\u00c3\u00a3o aceita \u00c3\u00a1udio como entrada nativa, ent\u00c3\u00a3o usei `faster-whisper` modelo `small` (int8, CPU) via Python/PyAV. \u00c3\ufffdudio tem **2min55s** (~2,8 MB), ent\u00c3\u00a3o coube numa passada s\u00c3\u00b3, sem fatiar.\n\nFiz **2 passes**:\n1. Passe 1 (VAD on) \u00e2\u20ac\u201d transcri\u00c3\u00a7\u00c3\u00a3o principal, cobre o \u00c3\u00a1udio inteiro.\n2. Passe 2 (VAD off, `condition_on_previous_text=False`) \u00e2\u20ac\u201d s\u00c3\u00b3 pra confirmar os trechos confusos entre 0:00 e 1:40. O passe 2 piorou alguns trechos (\"creme\", \"por porta\"), ent\u00c3\u00a3o onde os dois discordam sinalizo abaixo.\n\n---\n\n## 1. Transcri\u00c3\u00a7\u00c3\u00a3o fiel com timestamps\n\n> Nota: o \u00c3\u00a1udio \u00c3\u00a9 uma conversa informal. Quem fala primeiro \u00c3\u00a9 **Johnny** (o gravador, aparentemente), que provoca **Michelle** com a cita\u00c3\u00a7\u00c3\u00a3o de Bill Gates. Michelle responde, e ent\u00c3\u00a3o Johnny d\u00c3\u00a1 a pr\u00c3\u00b3pria opini\u00c3\u00a3o.\n\n**[00:00 \u00e2\u20ac\u201c 00:21] Johnny**\n> \"Bill Gates disse que, como voc\u00c3\u00aa tenta falar sobre produtividade, ele disse que prefere escolher uma pessoa pregui\u00c3\u00a7osa para fazer um trabalho, porque essa pessoa pregui\u00c3\u00a7osa vai escolher uma maneira f\u00c3\u00a1cil de resolver esse trabalho. O que voc\u00c3\u00aa acha disso, Michelle?\"\n\n**[00:21 \u00e2\u20ac\u201c 00:23] Michelle**\n> \"Agora \u00c3\u00a9 s\u00c3\u00b3 escolher.\"\n\n**[00:24 \u00e2\u20ac\u201c 00:45] Michelle** _(fala arrastada, com hesita\u00c3\u00a7\u00c3\u00b5es)_\n> \"Eu vou colocar, primeiro, assim, eu n\u00c3\u00a3o acho que a palavra [est\u00c3\u00a1 forte / \u00c3\u00a9 forte]... porque \u00c3\u00a9 distante, n\u00c3\u00a9? ... Por\u00c3\u00a9m, eu acho que eu, por exemplo, vou me colocar na lista [do trabalho / de quest\u00c3\u00b5es]. E eu [distante?]. Por que que pessoas assim, n\u00c3\u00a9?\"\n\n**[00:45 \u00e2\u20ac\u201c 01:07] Michelle**\n> \"Quando querem mais facilidade de executar o trabalho, porque as pessoas s\u00c3\u00a3o mais... tranquilas. E muitas das vezes as pessoas que querem fazer 2, 3, 4, 5, [6], 7, 8, 9, 10 [coisa]... n\u00c3\u00a3o executa nenhuma coisa direito.\"\n\n**[01:07 \u00e2\u20ac\u201c 01:22] Michelle**\n> \"Ent\u00c3\u00a3o eu acho que \u00c3\u00a9 [forte]. Numa coisa s\u00c3\u00b3 que est\u00c3\u00a1 bem feito, aquela coisa, mesmo que seja papo de tartaruga, a gente vai executar bem [feito/tudo].\"\n\n**[01:22 \u00e2\u20ac\u201c 01:31] Johnny**\n> \"Boa. Pode ser. Essa \u00c3\u00a9 a sua opini\u00c3\u00a3o, correto?\"\n\n**[01:31 \u00e2\u20ac\u201c 01:35] Johnny**\n> \"Vou lan\u00c3\u00a7ar a minha agora, t\u00c3\u00a1? A opini\u00c3\u00a3o de Johnny.\"\n\n**[01:35 \u00e2\u20ac\u201c 01:49] Johnny**\n> \"Ent\u00c3\u00a3o, o que ele quer dizer sobre produtividade \u00c3\u00a9 que voc\u00c3\u00aa quer aumentar a produtividade no seu trabalho, [porque] uma pessoa pregui\u00c3\u00a7osa... vai achar uma maneira f\u00c3\u00a1cil de fazer esse trabalho.\"\n\n**[01:49 \u00e2\u20ac\u201c 01:54] Johnny**\n> \"Porque as pessoas pregui\u00c3\u00a7osas costumam achar solu\u00c3\u00a7\u00c3\u00b5es inteligentes, entendeu?\"\n\n**[01:54 \u00e2\u20ac\u201c 02:06] Johnny**\n> \"Ent\u00c3\u00a3o, por exemplo, n\u00c3\u00a3o \u00c3\u00a9 que ela tem foco, ao contr\u00c3\u00a1rio. Ela quer diminuir o excesso de carga de uma coisa que \u00c3\u00a9 necess\u00c3\u00a1ria, que voc\u00c3\u00aa pode executar de uma forma mais f\u00c3\u00a1cil e pr\u00c3\u00a1tica.\"\n\n**[02:06 \u00e2\u20ac\u201c 02:22] Johnny**\n> \"Ent\u00c3\u00a3o, pessoas mais pregui\u00c3\u00a7osas, entre aspas, que eles jogam bem assim 'pregui\u00c3\u00a7osas', elas costumam ter esse tipo de criatividade, que as pessoas que n\u00c3\u00a3o s\u00c3\u00a3o pregui\u00c3\u00a7osas n\u00c3\u00a3o se importam em se esfor\u00c3\u00a7ar ao m\u00c3\u00a1ximo, por\u00c3\u00a9m n\u00c3\u00a3o v\u00c3\u00a3o ter resultados criativos e inteligentes.\"\n\n**[02:22 \u00e2\u20ac\u201c 02:38] Johnny**\n> \"E a\u00c3\u00ad, a produtividade n\u00c3\u00a3o \u00c3\u00a9 sobre trabalhar mais, porque ele meteu essa por uma coisa importante. Isso a\u00c3\u00ad, no sentido corporativista, trabalhar mais n\u00c3\u00a3o significa ser mais produtivo. Ent\u00c3\u00a3o voc\u00c3\u00aa pode trabalhar 200 horas a mais que o fulano e o fulano [ser] mais vezes mais produtivo que voc\u00c3\u00aa.\"\n\n**[02:38 \u00e2\u20ac\u201c 02:46] Johnny**\n> \"Hoje, por exemplo, a pr\u00c3\u00b3pria [intelig\u00c3\u00aancia] artificial \u00c3\u00a9 um exemplo claro disso, que tempo de trabalho n\u00c3\u00a3o \u00c3\u00a9 qualidade.\"\n\n**[02:46 \u00e2\u20ac\u201c 02:52] Johnny**\n> \"Ent\u00c3\u00a3o, resumindo isso, a minha perspectiva sobre o que ele quis era sobre produtividade no geral.\"\n\n---\n\n## 2. O que a pessoa quer / pedido impl\u00c3\u00adcito\n\nN\u00c3\u00a3o \u00c3\u00a9 um pedido operacional \u00e2\u20ac\u201d \u00c3\u00a9 um **papo/conversa gravada**, provavelmente conte\u00c3\u00bado pra rede social, podcast curto, ou nota pessoal. O objetivo \u00c3\u00a9:\n\n- **Johnny quer debater uma cita\u00c3\u00a7\u00c3\u00a3o de Bill Gates** (\"prefiro uma pessoa pregui\u00c3\u00a7osa porque ela acha o caminho mais f\u00c3\u00a1cil\") e **registrar a opini\u00c3\u00a3o de dois pontos de vista**: o de Michelle e o dele.\n- **Michelle** defende que a palavra \"pregui\u00c3\u00a7osa\" \u00c3\u00a9 forte/dista do assunto, e que o ponto real \u00c3\u00a9: **fazer pouca coisa, mas bem feita**, em vez de espalhar energia em 10 frentes e n\u00c3\u00a3o executar nada direito. Ela valoriza **foco e execu\u00c3\u00a7\u00c3\u00a3o de qualidade**.\n- **Johnny** fecha com a tese dele: **pregui\u00c3\u00a7a = criatividade / busca de solu\u00c3\u00a7\u00c3\u00b5es inteligentes**; produtividade n\u00c3\u00a3o \u00c3\u00a9 horas trabalhadas, \u00c3\u00a9 resultado por hora \u00e2\u20ac\u201d e usa a **intelig\u00c3\u00aancia artificial** como exemplo moderno disso.\n\n**Pedido impl\u00c3\u00adcito (prov\u00c3\u00a1vel):** algu\u00c3\u00a9m (Johnny, ou um editor) quer **transformar esse papo em conte\u00c3\u00bado** \u00e2\u20ac\u201d legenda, roteiro, v\u00c3\u00addeo curto, ou post sobre \"produtividade \u00e2\u2030\u00a0 horas trabalhadas\". Ele est\u00c3\u00a1 coletando opini\u00c3\u00b5es contrastantes pra fechar com uma reflex\u00c3\u00a3o.\n\nSe quiser, posso sugerir um t\u00c3\u00adtulo/legenda curta estilo Reels com base nisso \u00e2\u20ac\u201d \u00c3\u00a9 s\u00c3\u00b3 pedir.\n\n---\n\n## 3. Pontos amb\u00c3\u00adguos\n\n- **[00:24 \u00e2\u20ac\u201c 00:45] \u00e2\u20ac\u201d trecho mais fraco do \u00c3\u00a1udio.** Michelle fala baixo, arrasta, e tem corte/salto de racioc\u00c3\u00adnio. A frase \"eu n\u00c3\u00a3o acho que a palavra est\u00c3\u00a1 forte\" vs \"a palavra \u00c3\u00a9 forte\" ficou amb\u00c3\u00adgua entre passes. Sentido prov\u00c3\u00a1vel: ela **acha a palavra forte/demais**, mas n\u00c3\u00a3o consegue articular bem. **[inaud\u00c3\u00advel / incerto]**\n- **\"porque \u00c3\u00a9 distante, n\u00c3\u00a9\"** \u00e2\u20ac\u201d apareceu nos dois passes, mas o sentido \u00c3\u00a9 vago (distante de qu\u00c3\u00aa? do conceito real de produtividade?). Pode tamb\u00c3\u00a9m ser **\"porque \u00c3\u00a9 distante\"** ou algo como **\"porque \u00c3\u00a9 um estere\u00c3\u00b3tipo\"**. Confirma\u00c3\u00a7\u00c3\u00a3o baixa.\n- **\"vou me colocar na lista [do trabalho / de quest\u00c3\u00b5es]\"** \u00e2\u20ac\u201d a transcri\u00c3\u00a7\u00c3\u00a3o variou entre passes. Significado: ela se inclui no grupo que faz v\u00c3\u00a1rias coisas. **[inaud\u00c3\u00advel]**\n- **\"mesmo que seja papo de tartaruga\"** \u00e2\u20ac\u201d express\u00c3\u00a3o idiom\u00c3\u00a1tica/regional que n\u00c3\u00a3o consegui resolver. Pode ser **\"papo de tartaruga\"**, **\"papo de tartaruga\"** no sentido de \"conversa lenta/sem pressa\", ou pode ser outro termo (\"casa de tartaruga\"? \"corpo de tartaruga\"?). **Confirmar com ouvido humano.**\n- **\"ele meteu essa por uma coisa importante\"** (02:27) \u00e2\u20ac\u201d sentido: Bill Gates \"meteu essa\" (falou isso) por um motivo importante. Gramaticalmente estranho, mas \u00c3\u00a9 fala natural. Confirma\u00c3\u00a7\u00c3\u00a3o m\u00c3\u00a9dia.\n- **\"mais vezes mais produtivo\"** (02:38) \u00e2\u20ac\u201d provavelmente **\"N vezes mais produtivo\"** ou **\"muito mais produtivo\"**. O whisper capturou literalmente.\n- **Nome de um dos falantes:** confirmei **Michelle** (Johnny chama pelo nome em 00:21). O pr\u00c3\u00b3prio Johnny se identifica em 01:33 (\"a opini\u00c3\u00a3o de Johnny\"). Se o segundo nome estiver errado, me avise.\n\n---\n\n## 4. Palavras que provavelmente errei (confirmar)\n\n| Timestamp | Trecho duvidoso | O que provavelmente \u00c3\u00a9 | Confian\u00c3\u00a7a |\n|---|---|---|---|\n| 00:27 | \"a palavra est\u00c3\u00a1 forte\" | \"a palavra **\u00c3\u00a9** forte\" ou \"**est\u00c3\u00a1** forte\" | m\u00c3\u00a9dia |\n| 00:31 | \"porque \u00c3\u00a9 distante\" | pode ser outra palavra | baixa |\n| 00:39 | \"na lista do trabalho\" | \"na lista de quest\u00c3\u00b5es\" / \"no meio do trabalho\" | baixa |\n| 01:05 | \"2,3,4,5,7,8,9,10 coisa\" | lista informal, pode ter \"6\" no meio | m\u00c3\u00a9dia |\n| 01:13 | \"que est\u00c3\u00a1is bem feito\" | \"que **est\u00c3\u00a1** bem feito\" | alta |\n| 01:18 | **\"papo de tartaruga\"** | express\u00c3\u00a3o regional \u00e2\u20ac\u201d **n\u00c3\u00a3o confirmada** | **baixa** |\n| 02:27 | \"ele meteu essa por uma coisa importante\" | sentido ok, mas literal pode diferir | m\u00c3\u00a9dia |\n| 02:38 | \"mais vezes mais produtivo\" | \"N vezes mais produtivo\" | m\u00c3\u00a9dia |\n| 02:41 | \"a pr\u00c3\u00b3pria inteira artificial\" | \"a pr\u00c3\u00b3pria **intelig\u00c3\u00aancia** artificial\" | alta (erro claro do whisper) |\n\nO \u00c3\u00banico trecho que eu **n\u00c3\u00a3o recomendo usar em p\u00c3\u00bablico sem reouvir** \u00c3\u00a9 o de Michelle entre **00:24 e 00:45** \u00e2\u20ac\u201d est\u00c3\u00a1 com hesita\u00c3\u00a7\u00c3\u00b5es e o whisper n\u00c3\u00a3o resolveu bem. Se for pra virar legenda, sugiro reouvir s\u00c3\u00b3 esse peda\u00c3\u00a7o (~20 segundos)."}], "grading": {"expectations": [{"text": "Entrega transcricao com timestamps", "passed": true, "evidence": "answer.md secao 1: transcricao bloco a bloco de [00:00-00:21] a [02:46-02:52], com falante identificado por bloco."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 2: 'Nao e um pedido operacional - e um papo/conversa gravada' + pedido implicito 'transformar esse papo em conteudo'."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": true, "evidence": "answer.md marca '[inaudivel / incerto]', '[inaudivel]' e traz tabela de 9 palavras com nivel de confianca (baixa/media/alta)."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com a tabela de palavras duvidosas e recomendacao de reouvir 00:24-00:45. Nao ha mencao a limite de passos. Steps subiu de 12 para 30."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"shell": 14}, "total_tool_calls": 14, "total_steps": 14, "errors_encountered": 0, "output_chars": 8291, "transcript_chars": 0}, "notes": ["Iteracao 2: steps 12 -> 30, prompt obriga a dizer o caminho usado e reservar 4 passos para escrever.", "O agente declarou explicitamente: 'meu modelo de texto nao aceita audio como entrada nativa' e usou faster-whisper small. A premissa de audicao nativa esta encerrada.", "Dois passes (VAD on/off) e tabela de confianca por palavra - melhor que o iteration 1 e melhor que o baseline."]}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "orquestrador", "skill_path": "C:/Users/jryan/.config/opencode/skills/orquestrador", "executor_model": "opencode/deepseek-v4.1-flash-free", "analyzer_model": "opencode/deepseek-v4.1-flash-free", "timestamp": "2026-10-23T20:57:36Z", "evals_run": [2, 3], "runs_per_configuration": 1, "iteration": 2, "baseline_source": "iteration-1 (os bracos sem skill nao foram re-executados; as mudancas foram so nos agentes com skill)", "caveats": ["Iteracao 2 re-executou apenas os casos que falharam (eval 2 e 3). Eval 1 e 4 nao foram re-rodados.", "Baseline vem do iteration 1 e nao foi re-executado.", "1 run por configuracao: sinal direcional, nao estatistica."]}, "runs": [{"eval_id": 2, "eval_name": "Migracao Next para Vite em repo real", "configuration": "with_skill", "run_number": 2, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 53.2, "tokens": 123099, "tool_calls": 9, "errors": 0}, "expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md: 'Nao vale a pena a menos que o objetivo seja virar SPA estatica servida por outro host - a arquitetura atual depende de server components + better-sqlite3 nativo no Node'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita src/lib/db.ts:1-13, src/app/layout.tsx:1-2,7-17,33, src/app/page.tsx:9,11-12, tsconfig.json:16-20, eslint.config.mjs:2-4 e conta ocorrencias por grep."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md: better-sqlite3 como modulo nativo nao bundleavel, 8 route handlers com NextResponse, 12 pages com force-dynamic + PageProps."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md secoes 'Reescrita (estrutural)' e 'Ajuste (mecanico)' separadas."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com 'Esforco (estimativa)' e 'O que nao verifiquei'. Nao ha mencao a limite de passos. Steps subiu de 20 para 40."}], "notes": ["Iteracao 2: steps 20 -> 40 e orcamento explicito no prompt do agente.", "Tempo caiu de 194,5 s para 53,2 s e a resposta passou a ser completa: o cap de 20 nao estava protegendo nada, estava cortando a entrega.", "Ainda nao alcancou a profundidade do baseline em next/font (globals.css:10-11), mas declarou o que nao verificou."]}, {"eval_id": 3, "eval_name": "Transcricao de audio de cliente", "configuration": "with_skill", "run_number": 2, "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 224.3, "tokens": 22756, "tool_calls": 14, "errors": 0}, "expectations": [{"text": "Entrega transcricao com timestamps", "passed": true, "evidence": "answer.md secao 1: transcricao bloco a bloco de [00:00-00:21] a [02:46-02:52], com falante identificado por bloco."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 2: 'Nao e um pedido operacional - e um papo/conversa gravada' + pedido implicito 'transformar esse papo em conteudo'."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": true, "evidence": "answer.md marca '[inaudivel / incerto]', '[inaudivel]' e traz tabela de 9 palavras com nivel de confianca (baixa/media/alta)."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com a tabela de palavras duvidosas e recomendacao de reouvir 00:24-00:45. Nao ha mencao a limite de passos. Steps subiu de 12 para 30."}], "notes": ["Iteracao 2: steps 12 -> 30, prompt obriga a dizer o caminho usado e reservar 4 passos para escrever.", "O agente declarou explicitamente: 'meu modelo de texto nao aceita audio como entrada nativa' e usou faster-whisper small. A premissa de audicao nativa esta encerrada.", "Dois passes (VAD on/off) e tabela de confianca por palavra - melhor que o iteration 1 e melhor que o baseline."]}, {"eval_id": 2, "eval_name": "Migracao Next para Vite em repo real", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 194.9, "tokens": 41687, "tool_calls": 12, "errors": 0}, "expectations": [{"text": "Da veredito claro sobre a migracao Next para Vite", "passed": true, "evidence": "answer.md linha 3: 'Trocar Next por Vite aqui nao e trocar bundler, e tirar o servidor' + 'Nao faca, a menos que exista um motivo concreto'."}, {"text": "Cita arquivos e linhas concretos do repo como evidencia", "passed": true, "evidence": "answer.md cita src/app/layout.tsx:2, globals.css:10-11, entity-profile-view.tsx:3, layout.tsx:34, graph-canvas.tsx:350, servir.bat:3."}, {"text": "Identifica Server Components / API routes / better-sqlite3 como nucleo da quebra", "passed": true, "evidence": "answer.md: 'o app e 100% Server Components lendo um SQLite de 12,3 GB (elosys.db) direto no processo Node' + tabela das 8 rotas api."}, {"text": "Distingue o que precisa reescrever do que so precisa de ajuste", "passed": true, "evidence": "answer.md separa 'O que NAO quebra (a boa noticia)' de 'nivel 1/2/3' e fecha com tabela 'Custo real' por etapa."}, {"text": "Entrega resposta completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com 'Minha leitura' e recomendacao final; nao ha mencao a limite de passos."}], "notes": ["Achados que o braco com skill nao teve tempo de alcancar: next/font quebrando as variaveis CSS (globals.css:10-11), import runtime de better-sqlite3 em entity-profile-view.tsx:3, banco de 12,3 GB."]}, {"eval_id": 3, "eval_name": "Transcricao de audio de cliente", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.5, "passed": 2, "failed": 2, "total": 4, "time_seconds": 290.7, "tokens": 43330, "tool_calls": 6, "errors": 1}, "expectations": [{"text": "Entrega transcricao com timestamps", "passed": false, "evidence": "answer.md linha 3: 'Transcricao (resumida, com timestamps)' - entrega resumo por bloco ([00:00], [00:22], [01:26]), nao transcricao fiel do que foi dito."}, {"text": "Diz o que a pessoa quer ou qual e o pedido", "passed": true, "evidence": "answer.md secao 'O que ele quer': 'esse audio nao tem pedido nenhum... e um papo gravado sobre produtividade' + inferencias de uso."}, {"text": "Marca trechos inaudiveis em vez de inventar", "passed": false, "evidence": "Nenhum trecho marcado como inaudivel. Atribui falas a 'Johnny' e 'Michelle' sem ressalva de incerteza, e apresenta o resumo como se cobrisse o audio inteiro."}, {"text": "Entrega completa sem encerrar por limite de passos", "passed": true, "evidence": "Resposta fecha com arquivos gerados e observacao sobre o modelo small; nao ha mencao a limite de passos."}], "notes": ["Tambem usou faster-whisper local. Identificou 3 falantes e separou melhor que o braco com skill, mas resumiu em vez de transcrever."]}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 138.75, "stddev": 85.55, "min": 53.2, "max": 224.3}, "tokens": {"mean": 72927.5, "stddev": 50171.5, "min": 22756, "max": 123099}}, "without_skill": {"pass_rate": {"mean": 0.75, "stddev": 0.25, "min": 0.5, "max": 1.0}, "time_seconds": {"mean": 242.8, "stddev": 47.9, "min": 194.9, "max": 290.7}, "tokens": {"mean": 42508.5, "stddev": 821.5, "min": 41687, "max": 43330}}, "delta": {"pass_rate": "+0.2500", "time_seconds": "-104.1", "tokens": "+30419"}}, "notes": ["As duas falhas do iteration 1 eram de orcamento de passos, nao de modelo: contexto-longo 20 -> 40 e audio 12 -> 30.", "Eval 2 com skill subiu de 4/5 para 5/5 e ficou 3,7x mais rapido (194,5 s -> 53,2 s).", "Eval 3 com skill subiu de 3/4 para 4/4 e ficou 1,6x mais rapido (368,7 s -> 224,3 s).", "Pass rate com skill nos dois casos re-executados: 9/9 (1,00) contra 7/9 (0,78) do baseline.", "O agente audio declarou que o modelo nao aceita audio nativo e usou faster-whisper. A premissa de audicao nativa esta encerrada.", "Tokens do eval 2 seguem altos (123k) porque ler repo grande custa; e o custo legitimo da delegacao."]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>
