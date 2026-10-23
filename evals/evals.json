@@ -1,0 +1,29 @@
+{
+  "skill_name": "orquestrador",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "tem um print do site do cliente aqui em C:\\Users\\jryan\\Desktop\\print.png, ta feio demais. o que eu mudo?",
+      "expected_output": "O agente principal NAO finge ver a imagem. Delega para `visao` (descrever layout/cores/desalinhamentos) e para `frontend` (mudancas concretas), com briefs autocontidos contendo caminho e formato de saida. Integra os dois e responde curto.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "da uma olhada no repo C:\\Users\\jryan\\Desktop\\elosys inteiro e me diz o que quebra se eu trocar Next por Vite",
+      "expected_output": "Reconhece volume e delega para `contexto-longo` em vez de tentar ler tudo na sessao principal. Brief inclui caminho absoluto, objetivo e formato de saida. Resposta cita arquivos concretos.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "transcreve esse audio do cliente e me diz o que ele quer",
+      "expected_output": "Delega para `audio`. Entrega transcricao fiel + leitura do pedido, marcando trechos inaudiveis em vez de inventar.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "corrige esse typo na linha 12 do README, ta escrito 'recieve'",
+      "expected_output": "NAO orquestra. Tarefa de um passo: corrige direto. Se spawnar subagente, falhou no teste de restraint (overhead sem ganho).",
+      "files": []
+    }
+  ]
+}
