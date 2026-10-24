@@ -1,0 +1,13 @@
+{
+  "profile": "free",
+  "label": "Grátis (padrão)",
+  "note": "Custo zero, com fila. Teto de 3 subagentes em paralelo. É o perfil que o benchmark do repo usou.",
+  "models": {
+    "codigo": "opencode/deepseek-v4.1-flash-free#high",
+    "visao": "opencode/nemotron-3.5-super-vl-free#high",
+    "contexto-longo": "opencode/beam-free#high",
+    "frontend": "opencode/glm-5.3-flash-free#high",
+    "audio": "opencode/mimo-v2.6-flash-free",
+    "rapido": "opencode/flint-40b-free#low"
+  }
+}

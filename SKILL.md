@@ -1,6 +1,6 @@
 ---
 name: orquestrador
-description: Delega partes de uma tarefa para subagentes especializados, cada um rodando no modelo free mais adequado (visão, contexto longo, frontend, áudio, código, rápido), e integra os resultados no contexto da sessão principal. Use sempre que o usuário pedir para delegar, "chamar o modelo X", "mandar pro subagente", "fazer em paralelo", comparar modelos, analisar print/imagem/PDF, processar arquivo gigante, ou quando a tarefa tiver partes separáveis que se beneficiam de modelos diferentes. Também use quando o usuário perguntar qual modelo serve para quê, ou quando a tarefa envolver ler mais de ~150k tokens de uma vez.
+description: Delega partes de uma tarefa para subagentes especializados, cada um rodando o modelo mais adequado ao papel, em perfil free ou pago (visão, contexto longo, frontend, áudio, código, rápido), e integra os resultados no contexto da sessão principal. Use sempre que o usuário pedir para delegar, "chamar o modelo X", "mandar pro subagente", "fazer em paralelo", comparar modelos, analisar print/imagem/PDF, processar arquivo gigante, ou quando a tarefa tiver partes separáveis que se beneficiam de modelos diferentes. Também use quando o usuário perguntar qual modelo serve para quê, ou quando a tarefa envolver ler mais de ~150k tokens de uma vez.
 ---
 
 # Orquestrador
@@ -22,7 +22,7 @@ Não orquestre quando:
 
 - A resposta cabe em 1-2 passos. Subagente tem overhead: latência de spawn, contexto frio, tokens.
 - Você já tem tudo no contexto e a tarefa é contínua. Quebrar em filho faz ele perder o fio.
-- O usuário pediu velocidade acima de qualidade. Um modelo free em fila é mais lento que você respondendo direto.
+- O usuário pediu velocidade acima de qualidade. No perfil free, a fila costuma ser mais lenta que você respondendo direto.
 - **É uma imagem só e você já tem visão.** Ver a seção "O preço da delegação" abaixo: medido, isso saiu caro e não melhorou a resposta.
 
 ## O preço da delegação
@@ -60,7 +60,7 @@ Não fecha quando você delega para "usar o modelo certo" uma tarefa que você r
 - **Formato de saída** — exatamente o que você quer de volta: lista, JSON, patch, texto corrido, tabela. Se você não disser, ele escolhe, e geralmente escolhe errado.
 - **Limites** — o que ele NÃO deve fazer (não editar, não instalar, não inventar).
 
-**4. Lance e observe.** Para uma tarefa só, use foreground: você espera, recebe, e continua. Para tarefas independentes, dispare em paralelo — mas no máximo **3 de uma vez**. Modelo free tem fila; 5 em paralelo costuma ser mais lento que 3 em sequência.
+**4. Lance e observe.** Para uma tarefa só, use foreground: você espera, recebe, e continua. Para tarefas independentes, dispare em paralelo — mas respeite o perfil: **3 de uma vez no `free`** (que enfileira), **até 6 no `paid`**. Acima disso o ganho some: no free porque a fila come, no pago porque você passa a pagar por trabalho que não estava esperando.
 
 **5. Integre e encerre.** Quando o filho devolve, ele acabou. Traga o resultado para o seu contexto, combine com o que você já sabe, e responda ao usuário. **Não reabra a sessão do filho** para "continuar" — ela foi feita para uma tarefa e cumpriu. Se precisa de mais, escreva um brief novo. Sessão de filho não é chat.
 
@@ -74,16 +74,32 @@ Repassar afirmação de filho como se fosse sua é o jeito mais fácil de transf
 
 ## Catálogo
 
-| Subagente | Modelo | Use para | Não use para |
-|---|---|---|---|
-| `codigo` | deepseek-v4.1-flash-free `#high` | implementar, refatorar, escrever teste, debugar arquivo isolado | decisão de arquitetura que depende da conversa |
-| `visao` | nemotron-3.5-super-vl-free `#high` | várias imagens, PDF, segunda leitura independente, antes/depois | uma imagem só que você já consegue ver |
-| `contexto-longo` | beam-free `#high` | repo inteiro, log enorme, contrato de 300 páginas | tarefa rápida |
-| `frontend` | glm-5.3-flash-free `#high` | CSS, Tailwind, componente visual, carrossel, landing | lógica de backend |
-| `audio` | mimo-v2.6-flash-free | áudio de WhatsApp, transcrição (via whisper local), vídeo com fala | qualquer coisa sem áudio |
-| `rapido` | flint-40b-free `#low` | classificar, extrair campo, resumir 10 linhas | raciocínio difícil |
+| Subagente | Use para | Não use para |
+|---|---|---|
+| `codigo` | implementar, refatorar, escrever teste, debugar arquivo isolado | decisão de arquitetura que depende da conversa |
+| `visao` | várias imagens, PDF, segunda leitura independente, antes/depois | uma imagem só que você já consegue ver |
+| `contexto-longo` | repo inteiro, log enorme, contrato de 300 páginas | tarefa rápida |
+| `frontend` | CSS, Tailwind, componente visual, carrossel, landing | lógica de backend |
+| `audio` | áudio de WhatsApp, transcrição (via whisper local), vídeo com fala | qualquer coisa sem áudio |
+| `rapido` | classificar, extrair campo, resumir 10 linhas | raciocínio difícil |
 
-Detalhes de ficha técnica e fallback: `references/modelos-free.md`.
+O modelo de cada papel depende do **perfil instalado**. Veja o que está ativo:
+
+```bash
+opencode debug agents
+```
+
+| Subagente | Perfil `free` (padrão) | Perfil `paid` |
+|---|---|---|
+| `codigo` | deepseek-v4.1-flash-free `#high` | deepseek-v4-pro `#high` |
+| `visao` | nemotron-3.5-super-vl-free `#high` | gemini-4-argon `#high` |
+| `contexto-longo` | beam-free `#high` | beam-free `#high` (sem fila) |
+| `frontend` | glm-5.3-flash-free `#high` | glm-5.3 `#high` |
+| `audio` | mimo-v2.6-flash-free | mimo-v2.6-pro |
+| `rapido` | flint-40b-free `#low` | qwen3.8-flash `#low` |
+
+O perfil se troca no instalador (`install.ps1 -Profile paid`), não editando arquivo à mão.
+Ficha técnica e preços: `references/modelos-free.md` e `references/modelos-pagos.md`.
 
 ## Escrevendo o brief
 
@@ -105,7 +121,7 @@ A diferença não é tamanho — é o filho conseguir executar sem te fazer perg
 
 ## Falhas e fallback
 
-- **Modelo free fora / fila travada** — tente de novo uma vez. Se falhar de novo, caia para o irmão pago (`opencode-go/deepseek-v4.1-flash`, centavos) ou para o `codigo`.
+- **Modelo fora / fila travada** — tente de novo uma vez. Se falhar de novo, troque de perfil: no `free`, caia para o irmão pago (`opencode-go/deepseek-v4.1-flash`, centavos); no `paid`, caia para o free correspondente ou para o `codigo`. Trocar de perfil não exige reinserir nada — é `install.ps1 -Profile <outro>`.
 - **Filho parou por limite de passos** — a resposta costuma vir pela metade com "máximo de passos atingido". Não é falha de modelo, é de orçamento: o brief pediu mais leitura do que os `steps` do agente permitem. `contexto-longo` tem 40, `audio` tem 30. Se ainda estourar, reduza o escopo do brief ("só o diretório web/") em vez de aumentar o cap de novo.
 - **Resultado vago** — não reabra o filho pedindo "melhore". O brief estava fraco. Reescreva com formato de saída explícito e lance de novo.
 - **Resultado errado mas bem formatado** — desconfie do brief, não do modelo. Falta contexto ou falta restrição.

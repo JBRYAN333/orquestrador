@@ -16,31 +16,49 @@ Só que "modelo certo" não é slogan: o benchmark deste repo mostrou onde a esp
 orquestrador/
 ├── SKILL.md                     # protocolo de orquestração
 ├── references/
-│   └── modelos-free.md          # ficha técnica + fallback + o que o benchmark desmentiu
+│   ├── modelos-free.md          # ficha técnica + o que o benchmark desmentiu
+│   └── modelos-pagos.md         # mapa do perfil pago, preços e alternativas
+├── profiles/
+│   ├── free.json                # papel -> modelo (perfil padrão)
+│   └── paid.json                # papel -> modelo (opencode-go)
 ├── evals/
 │   ├── evals.json               # 4 casos com expectativas verificáveis
 │   └── files/                   # fixtures (print, README com typo)
 ├── benchmarks/
 │   ├── iteration-1/             # benchmark.json + review.html
 │   └── iteration-2/
-├── agents/                      # os 6 subagentes (vão para ~/.config/opencode/agents/)
-├── install.ps1                  # instalador Windows
+├── agents/                      # os 6 subagentes (prompts; modelo vem do perfil)
+├── install.ps1                  # instalador Windows (free | paid)
 ├── LICENSE
 └── README.md
 ```
 
-Os subagentes ficam fora da skill, em `~/.config/opencode/agents/`:
+Os subagentes ficam fora da skill, em `~/.config/opencode/agents/`. Os **prompts são os mesmos nos dois perfis** — o instalador só reescreve a linha `model:` de cada um.
 
-| Agente | Modelo |
-|---|---|
-| `codigo` | deepseek-v4.1-flash-free `#high` |
-| `visao` | nemotron-3.5-super-vl-free `#high` |
-| `contexto-longo` | beam-free `#high` |
-| `frontend` | glm-5.3-flash-free `#high` |
-| `audio` | mimo-v2.6-flash-free |
-| `rapido` | flint-40b-free `#low` |
+| Agente | Perfil `free` | Perfil `paid` |
+|---|---|---|
+| `codigo` | deepseek-v4.1-flash-free `#high` | deepseek-v4-pro `#high` |
+| `visao` | nemotron-3.5-super-vl-free `#high` | gemini-4-argon `#high` |
+| `contexto-longo` | beam-free `#high` | beam-free `#high` (sem fila) |
+| `frontend` | glm-5.3-flash-free `#high` | glm-5.3 `#high` |
+| `audio` | mimo-v2.6-flash-free | mimo-v2.6-pro |
+| `rapido` | flint-40b-free `#low` | qwen3.8-flash `#low` |
 
 Skill não carrega modelo. O agente carrega. A skill só decide o roteamento.
+
+## Perfis
+
+A skill não é presa ao free. O que é free é o **perfil padrão**: os seis modelos em `profiles/free.json`. Trocar para pago não muda nenhum prompt, nenhuma regra de brief, nenhum orçamento de passos — muda só quem executa.
+
+| | `free` (padrão) | `paid` |
+|---|---|---|
+| Custo | zero | centavos por tarefa |
+| Fila | sim | não |
+| Paralelos | 3 | até 6 |
+| `#max` | raramente vale | faz sentido em problema difícil |
+| Argumento | custo zero | velocidade e isolamento de contexto |
+
+O que **não** muda: o preço da delegação continua existindo. Delegar o que você resolveria sozinho custa caro nos dois perfis, só que no pago o custo é dinheiro em vez de fila.
 
 ## Instalação
 
@@ -52,8 +70,23 @@ cd orquestrador
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
+Perfil pago:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Profile paid
+```
+
+Conferir o que será instalado, sem escrever nada:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Profile paid -DryRun
+```
+
+Voltar para o free é o mesmo comando com `-Profile free`. Não precisa reinstalar a skill inteira — os prompts são idênticos.
+
 Manual: copiar o conteúdo para `~/.config/opencode/skills/orquestrador/` e os seis `.md`
-de `agents/` para `~/.config/opencode/agents/`. O opencode recarrega sozinho, sem reiniciar.
+de `agents/` para `~/.config/opencode/agents/`, trocando a linha `model:` conforme o perfil.
+O opencode recarrega sozinho, sem reiniciar.
 
 Validar:
 

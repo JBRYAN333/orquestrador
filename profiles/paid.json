@@ -1,0 +1,14 @@
+{
+  "profile": "paid",
+  "label": "Pago (opencode-go)",
+  "note": "Sem fila. Teto de até 6 subagentes em paralelo. Requer crédito no provedor opencode-go. Custo típico por tarefa: centavos.",
+  "requires": "opencode-go",
+  "models": {
+    "codigo": "opencode-go/deepseek-v4-pro#high",
+    "visao": "opencode-go/gemini-4-argon#high",
+    "contexto-longo": "opencode-go/beam-free#high",
+    "frontend": "opencode-go/glm-5.3#high",
+    "audio": "opencode-go/mimo-v2.6-pro",
+    "rapido": "opencode-go/qwen3.8-flash#low"
+  }
+}
